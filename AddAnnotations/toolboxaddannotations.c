@@ -28,28 +28,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -164,13 +144,13 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
     TPtxPdfContent_Paint*            pYellowTransp  = NULL;
     TPtxPdfContent_Paint*            pRed           = NULL;
     TPtxPdfContent_Transparency*     pTransparency  = NULL;
-    TPtxPdfAnnots_StickyNote*         pStickyNote    = NULL;
-    TPtxPdfAnnots_EllipseAnnotation*  pEllipse       = NULL;
-    TPtxPdfAnnots_FreeText*           pFreeText      = NULL;
-    TPtxPdfAnnots_Highlight*          pHighlight     = NULL;
-    TPtxPdfNav_WebLink*            pWebLink       = NULL;
-    TPtxPdfAnnots_AnnotationList*     pAnnotations   = NULL;
-    TPtxPdfNav_LinkList*           pLinks         = NULL;
+    TPtxPdfAnnots_StickyNote*        pStickyNote    = NULL;
+    TPtxPdfAnnots_EllipseAnnotation* pEllipse       = NULL;
+    TPtxPdfAnnots_FreeText*          pFreeText      = NULL;
+    TPtxPdfAnnots_Highlight*         pHighlight     = NULL;
+    TPtxPdfNav_WebLink*              pWebLink       = NULL;
+    TPtxPdfAnnots_AnnotationList*    pAnnotations   = NULL;
+    TPtxPdfNav_LinkList*             pLinks         = NULL;
     TPtxPdfContent_Stroke*           pStroke        = NULL;
     TPtxPdfContent_Stroke*           pWebLinkStroke = NULL;
     TPtxPdfContent_ContentExtractor* pExtractor     = NULL;
@@ -211,16 +191,16 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
     aGreen[1] = 1.0;
     aGreen[2] = 0.0;
     pGreen    = PtxPdfContent_Paint_Create(pOutDoc, pRgb, aGreen, 3, NULL);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGreen, _T("Failed to create green paint. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGreen, _T("Failed to create green paint. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     stickyNoteTopLeft.dX = 10.0;
     stickyNoteTopLeft.dY = pageSize.dHeight - 10.0;
-    pStickyNote = PtxPdfAnnots_StickyNote_Create(pOutDoc, &stickyNoteTopLeft, _T("Hello world!"), pGreen);
+    pStickyNote          = PtxPdfAnnots_StickyNote_Create(pOutDoc, &stickyNoteTopLeft, _T("Hello world!"), pGreen);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pStickyNote, _T("Failed to create sticky note. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfAnnots_AnnotationList_Add(pAnnotations, (TPtxPdfAnnots_Annotation*)pStickyNote),
-                                      _T("Failed to add sticky note. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                      Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
+        PtxPdfAnnots_AnnotationList_Add(pAnnotations, (TPtxPdfAnnots_Annotation*)pStickyNote),
+        _T("Failed to add sticky note. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
 
     // Create an ellipse and add to output page's annotations
     aBlue[0] = 0.0;
@@ -239,15 +219,15 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
     ellipseBox.dBottom = pageSize.dHeight - 60.0;
     ellipseBox.dRight  = 70.0;
     ellipseBox.dTop    = pageSize.dHeight - 20.0;
-    pStroke = PtxPdfContent_Stroke_New(pBlue, 1.5);
+    pStroke            = PtxPdfContent_Stroke_New(pBlue, 1.5);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pStroke, _T("Failed to create stroke. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                      Ptx_GetLastError());
     pEllipse = PtxPdfAnnots_EllipseAnnotation_Create(pOutDoc, &ellipseBox, pStroke, pYellow);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pEllipse, _T("Failed to create ellipse. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                      Ptx_GetLastError());
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfAnnots_AnnotationList_Add(pAnnotations, (TPtxPdfAnnots_Annotation*)pEllipse),
-                                      _T("Failed to add ellipse. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                      Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
+        PtxPdfAnnots_AnnotationList_Add(pAnnotations, (TPtxPdfAnnots_Annotation*)pEllipse),
+        _T("Failed to add ellipse. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
 
     // Create a free text and add to output page's annotations
     pTransparency = PtxPdfContent_Transparency_New(0.5);
@@ -261,14 +241,13 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
     freeTextBox.dBottom = pageSize.dHeight - 170.0;
     freeTextBox.dRight  = 120.0;
     freeTextBox.dTop    = pageSize.dHeight - 70.0;
-    pFreeText = PtxPdfAnnots_FreeText_Create(pOutDoc, &freeTextBox,
-                                            _T("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-                                            pYellowTransp, NULL);
+    pFreeText           = PtxPdfAnnots_FreeText_Create(
+        pOutDoc, &freeTextBox, _T("Lorem ipsum dolor sit amet, consectetur adipiscing elit."), pYellowTransp, NULL);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFreeText, _T("Failed to create free text. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfAnnots_AnnotationList_Add(pAnnotations, (TPtxPdfAnnots_Annotation*)pFreeText),
-                                      _T("Failed to add free text. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                      Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
+        PtxPdfAnnots_AnnotationList_Add(pAnnotations, (TPtxPdfAnnots_Annotation*)pFreeText),
+        _T("Failed to add free text. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
 
     // Extract content elements from the input page for highlight and web-link
     pInContent = PtxPdf_Page_GetContent(pInPage);
@@ -293,8 +272,7 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
             if (!bHighlightCreated && eType == ePtxPdfContent_ContentElementType_TextElement)
             {
                 TPtxPdfContent_TextElement* pTextElement = (TPtxPdfContent_TextElement*)pElement;
-                TPtxPdfContent_Text* pTextIter =
-                    PtxPdfContent_TextElement_GetText(pTextElement);
+                TPtxPdfContent_Text*        pTextIter    = PtxPdfContent_TextElement_GetText(pTextElement);
                 if (pTextIter != NULL)
                 {
                     TPtxGeomReal_QuadrilateralList* pQuads = PtxGeomReal_QuadrilateralList_New();
@@ -304,8 +282,7 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
                         int nFragments = PtxPdfContent_Text_GetCount(pTextIter);
                         for (int iFrag = 0; iFrag < nFragments; iFrag++)
                         {
-                            TPtxPdfContent_TextFragment* pFragment =
-                                PtxPdfContent_Text_Get(pTextIter, iFrag);
+                            TPtxPdfContent_TextFragment* pFragment = PtxPdfContent_Text_Get(pTextIter, iFrag);
                             if (pFragment != NULL)
                             {
                                 TPtxGeomReal_AffineTransform transform;
@@ -348,14 +325,14 @@ int copyAndAddAnnotations(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pInPage, TPtx
 
                         // Create a web-link
                         pWebLink = PtxPdfNav_WebLink_CreateFromQuadrilaterals(pOutDoc, pQuads,
-                                                                                _T("https://www.pdf-tools.com"));
+                                                                              _T("https://www.pdf-tools.com"));
                         if (pWebLink != NULL)
                         {
                             // Set border style
                             aRed[0] = 1.0;
                             aRed[1] = 0.0;
                             aRed[2] = 0.0;
-                            pRed = PtxPdfContent_Paint_Create(pOutDoc, pRgb, aRed, 3, NULL);
+                            pRed    = PtxPdfContent_Paint_Create(pOutDoc, pRgb, aRed, 3, NULL);
                             if (pRed != NULL)
                             {
                                 pWebLinkStroke = PtxPdfContent_Stroke_New(pRed, 1.5);
@@ -394,23 +371,22 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                    pInStream    = NULL;
+    FILE*                    pInStream = NULL;
     TPtxSys_StreamDescriptor descriptor;
-    TPtxPdf_Document*        pInDoc       = NULL;
-    FILE*                    pOutStream   = NULL;
+    TPtxPdf_Document*        pInDoc     = NULL;
+    FILE*                    pOutStream = NULL;
     TPtxSys_StreamDescriptor outDescriptor;
-    TPtxPdf_Document*        pOutDoc      = NULL;
-    TPtxPdf_PageList*        pInPageList  = NULL;
-    TPtxPdf_PageList*        pOutPageList = NULL;
-    TPtxPdf_PageList*        pInPageRange = NULL;
+    TPtxPdf_Document*        pOutDoc       = NULL;
+    TPtxPdf_PageList*        pInPageList   = NULL;
+    TPtxPdf_PageList*        pOutPageList  = NULL;
+    TPtxPdf_PageList*        pInPageRange  = NULL;
     TPtxPdf_PageList*        pOutPageRange = NULL;
-    TPtxPdf_Page*            pInPage      = NULL;
-    TPtxPdf_Page*            pOutPage     = NULL;
-    TPtxPdf_PageCopyOptions* pCopyOptions = NULL;
+    TPtxPdf_Page*            pInPage       = NULL;
+    TPtxPdf_Page*            pOutPage      = NULL;
+    TPtxPdf_PageCopyOptions* pCopyOptions  = NULL;
     TPtxPdf_Conformance      iConformance;
     TCHAR*                   szInPath;
     TCHAR*                   szOutPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -425,7 +401,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -483,13 +459,11 @@ int _tmain(int argc, TCHAR* argv[])
     if (PtxPdf_PageList_GetCount(pInPageList) > 1)
     {
         pInPageRange = PtxPdf_PageList_GetRange(pInPageList, 1, PtxPdf_PageList_GetCount(pInPageList) - 1);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPageRange,
-                                         _T("Failed to get page range. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                         Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPageRange, _T("Failed to get page range. %s (ErrorCode: 0x%08x).\n"),
+                                         szErrorBuff, Ptx_GetLastError());
         pOutPageRange = PtxPdf_PageList_Copy(pOutDoc, pInPageRange, pCopyOptions);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageRange,
-                                         _T("Failed to copy page range. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                         Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageRange, _T("Failed to copy page range. %s (ErrorCode: 0x%08x).\n"),
+                                         szErrorBuff, Ptx_GetLastError());
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_PageList_AddRange(pOutPageList, pOutPageRange),
                                           _T("Failed to add page range. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                           Ptx_GetLastError());

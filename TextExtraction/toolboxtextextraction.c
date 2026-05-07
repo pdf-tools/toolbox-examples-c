@@ -29,28 +29,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -168,10 +148,8 @@ int writeText(TPtxPdfContent_Text* pText)
                 double dCurrWordSpacing = PtxPdfContent_TextFragment_GetWordSpacing(pCurrFrag);
                 double dLastWordSpacing = PtxPdfContent_TextFragment_GetWordSpacing(pLastFrag);
 
-                if (dCurrCharSpacing != dLastCharSpacing ||
-                    dCurrFontSize != dLastFontSize ||
-                    dCurrHorizScale != dLastHorizScale ||
-                    dCurrRise != dLastRise ||
+                if (dCurrCharSpacing != dLastCharSpacing || dCurrFontSize != dLastFontSize ||
+                    dCurrHorizScale != dLastHorizScale || dCurrRise != dLastRise ||
                     dCurrWordSpacing != dLastWordSpacing)
                 {
                     bAddSpace = TRUE;
@@ -179,7 +157,7 @@ int writeText(TPtxPdfContent_Text* pText)
                 else
                 {
                     // Get bounding boxes and transforms to compare positions
-                    TPtxGeomReal_Rectangle currBBox, lastBBox;
+                    TPtxGeomReal_Rectangle       currBBox, lastBBox;
                     TPtxGeomReal_AffineTransform currTransform, lastTransform;
 
                     if (PtxPdfContent_TextFragment_GetBoundingBox(pCurrFrag, &currBBox) &&
@@ -189,16 +167,16 @@ int writeText(TPtxPdfContent_Text* pText)
                     {
                         // Transform bottom-left of current and bottom-right of last
                         // Current bottom-left: (currBBox.dLeft, currBBox.dBottom)
-                        double dCurrBotLeftX = currTransform.dA * currBBox.dLeft +
-                                               currTransform.dC * currBBox.dBottom + currTransform.dE;
-                        double dCurrBotLeftY = currTransform.dB * currBBox.dLeft +
-                                               currTransform.dD * currBBox.dBottom + currTransform.dF;
+                        double dCurrBotLeftX =
+                            currTransform.dA * currBBox.dLeft + currTransform.dC * currBBox.dBottom + currTransform.dE;
+                        double dCurrBotLeftY =
+                            currTransform.dB * currBBox.dLeft + currTransform.dD * currBBox.dBottom + currTransform.dF;
 
                         // Last bottom-right: (lastBBox.dRight, lastBBox.dBottom)
-                        double dLastBotRightX = lastTransform.dA * lastBBox.dRight +
-                                                lastTransform.dC * lastBBox.dBottom + lastTransform.dE;
-                        double dLastBotRightY = lastTransform.dB * lastBBox.dRight +
-                                                lastTransform.dD * lastBBox.dBottom + lastTransform.dF;
+                        double dLastBotRightX =
+                            lastTransform.dA * lastBBox.dRight + lastTransform.dC * lastBBox.dBottom + lastTransform.dE;
+                        double dLastBotRightY =
+                            lastTransform.dB * lastBBox.dRight + lastTransform.dD * lastBBox.dBottom + lastTransform.dF;
 
                         if (dLastBotRightX < dCurrBotLeftX - 0.7 * dCurrFontSize ||
                             dLastBotRightY < dCurrBotLeftY - 0.1 * dCurrFontSize ||
@@ -218,7 +196,7 @@ int writeText(TPtxPdfContent_Text* pText)
         size_t nNeeded   = nOutputSize + nSpaceLen + nFragLen + 1;
         if (nNeeded > nOutputCap)
         {
-            nOutputCap = nNeeded * 2;
+            nOutputCap  = nNeeded * 2;
             TCHAR* pNew = (TCHAR*)realloc(szOutput, nOutputCap * sizeof(TCHAR));
             if (pNew == NULL)
             {
@@ -248,7 +226,7 @@ int writeText(TPtxPdfContent_Text* pText)
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                            pInStream   = NULL;
+    FILE*                            pInStream = NULL;
     TPtxSys_StreamDescriptor         descriptor;
     TPtxPdf_Document*                pInDoc      = NULL;
     TPtxPdf_PageList*                pInPageList = NULL;
@@ -256,7 +234,6 @@ int _tmain(int argc, TCHAR* argv[])
     TPtxPdfContent_Content*          pContent    = NULL;
     TPtxPdfContent_ContentExtractor* pExtractor  = NULL;
     TCHAR*                           szInPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -271,7 +248,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -299,8 +276,8 @@ int _tmain(int argc, TCHAR* argv[])
         _tprintf(_T("==========\n"));
 
         pPage = PtxPdf_PageList_Get(pInPageList, iPageNo);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"),
-                                         iPageNo + 1, szErrorBuff, Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"), iPageNo + 1,
+                                         szErrorBuff, Ptx_GetLastError());
 
         pContent = PtxPdf_Page_GetContent(pPage);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get content from page %d. %s (ErrorCode: 0x%08x).\n"),

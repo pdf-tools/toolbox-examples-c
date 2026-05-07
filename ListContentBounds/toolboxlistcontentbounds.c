@@ -29,28 +29,8 @@
 #include <float.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -125,17 +105,16 @@ void transformPoint(const TPtxGeomReal_AffineTransform* pTr, double dInX, double
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                                pInStream       = NULL;
-    TPtxSys_StreamDescriptor             descriptor;
-    TPtxPdf_Document*                    pInDoc          = NULL;
-    TPtxPdf_PageList*                    pInPageList     = NULL;
-    TPtxPdf_Page*                        pPage           = NULL;
-    TPtxPdfContent_Content*              pContent        = NULL;
-    TPtxPdfContent_ContentExtractor*     pExtractor      = NULL;
-    TPtxPdfContent_ContentExtractorIterator* pIterator   = NULL;
-    TPtxPdfContent_ContentElement*       pContentElement = NULL;
-    TCHAR*                               szInPath;
-
+    FILE*                                    pInStream = NULL;
+    TPtxSys_StreamDescriptor                 descriptor;
+    TPtxPdf_Document*                        pInDoc          = NULL;
+    TPtxPdf_PageList*                        pInPageList     = NULL;
+    TPtxPdf_Page*                            pPage           = NULL;
+    TPtxPdfContent_Content*                  pContent        = NULL;
+    TPtxPdfContent_ContentExtractor*         pExtractor      = NULL;
+    TPtxPdfContent_ContentExtractorIterator* pIterator       = NULL;
+    TPtxPdfContent_ContentElement*           pContentElement = NULL;
+    TCHAR*                                   szInPath;
 
     setlocale(LC_CTYPE, "");
 
@@ -150,7 +129,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -177,9 +156,8 @@ int _tmain(int argc, TCHAR* argv[])
         TPtxGeomReal_Rectangle contentBox;
 
         pPage = PtxPdf_PageList_Get(pInPageList, iPageNo);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPage,
-                                         _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"),
-                                         iPageNo + 1, szErrorBuff, Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"), iPageNo + 1,
+                                         szErrorBuff, Ptx_GetLastError());
 
         // Print page size
         _tprintf(_T("Page %d\n"), iPageNo + 1);
@@ -198,8 +176,7 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Get page content
         pContent = PtxPdf_Page_GetContent(pPage);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent,
-                                         _T("Failed to get content from page %d. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get content from page %d. %s (ErrorCode: 0x%08x).\n"),
                                          iPageNo + 1, szErrorBuff, Ptx_GetLastError());
 
         pExtractor = PtxPdfContent_ContentExtractor_New(pContent);
@@ -208,8 +185,7 @@ int _tmain(int argc, TCHAR* argv[])
                                          szErrorBuff, Ptx_GetLastError());
 
         pIterator = PtxPdfContent_ContentExtractor_GetIterator(pExtractor);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pIterator,
-                                         _T("Failed to get iterator. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pIterator, _T("Failed to get iterator. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         PtxPdfContent_ContentExtractorIterator_MoveNext(pIterator);

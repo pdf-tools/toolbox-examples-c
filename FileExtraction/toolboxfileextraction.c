@@ -28,28 +28,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -139,15 +119,15 @@ int extractFile(TPtxPdf_FileReference* pFileRef, const TCHAR* szOutputDir)
     PtxSysCreateFILEStreamDescriptor(&outDescriptor, pOutStream, 0);
 
     // Get the data stream and copy it to the output file
-    TPtxSys_StreamDescriptor dataStreamDesc;
-    BOOL bGetData = PtxPdf_FileReference_GetData(pFileRef, &dataStreamDesc);
+    TPtxSys_StreamDescriptor  dataStreamDesc;
+    BOOL                      bGetData    = PtxPdf_FileReference_GetData(pFileRef, &dataStreamDesc);
     TPtxSys_StreamDescriptor* pDataStream = bGetData ? &dataStreamDesc : NULL;
     if (pDataStream == NULL)
     {
         nBufSize = Ptx_GetLastErrorMessage(NULL, 0);
         Ptx_GetLastErrorMessage(szErrorBuff, MIN(ARRAY_SIZE(szErrorBuff), nBufSize));
-        _tprintf(_T("Failed to get embedded file data for \"%s\". %s (ErrorCode: 0x%08x).\n"),
-                 szName, szErrorBuff, Ptx_GetLastError());
+        _tprintf(_T("Failed to get embedded file data for \"%s\". %s (ErrorCode: 0x%08x).\n"), szName, szErrorBuff,
+                 Ptx_GetLastError());
         fclose(pOutStream);
         return FALSE;
     }
@@ -169,14 +149,13 @@ int extractFile(TPtxPdf_FileReference* pFileRef, const TCHAR* szOutputDir)
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                      pInStream   = NULL;
+    FILE*                      pInStream = NULL;
     TPtxSys_StreamDescriptor   descriptor;
-    TPtxPdf_Document*          pInDoc      = NULL;
+    TPtxPdf_Document*          pInDoc       = NULL;
     TPtxPdf_FileReferenceList* pFileRefList = NULL;
-    TPtxPdf_FileReference*     pFileRef    = NULL;
+    TPtxPdf_FileReference*     pFileRef     = NULL;
     TCHAR*                     szInPath;
     TCHAR*                     szOutputDir;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -191,7 +170,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -208,21 +187,19 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Get all embedded files
     pFileRefList = PtxPdf_Document_GetAllEmbeddedFiles(pInDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFileRefList,
-                                     _T("Failed to get embedded files. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFileRefList, _T("Failed to get embedded files. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Extract each embedded file
     for (int i = 0; i < PtxPdf_FileReferenceList_GetCount(pFileRefList); i++)
     {
         pFileRef = PtxPdf_FileReferenceList_Get(pFileRefList, i);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFileRef,
-                                         _T("Failed to get file reference. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFileRef, _T("Failed to get file reference. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(extractFile(pFileRef, szOutputDir),
-                                          _T("Error extracting embedded file. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Error extracting embedded file. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         if (pFileRef != NULL)
         {

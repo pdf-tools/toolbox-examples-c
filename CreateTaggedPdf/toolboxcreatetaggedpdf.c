@@ -28,28 +28,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -122,21 +102,13 @@ TCHAR  szErrorBuff[1024];
 int    iReturnValue = 0;
 
 /* Convert centimeters to points (1 cm = 28.346456693 points) */
-double cmToPoints(double value)
-{
-    return value * 28.346456693;
-}
+double cmToPoints(double value) { return value * 28.346456693; }
 /* Try creating a font from a list of fallback names */
 TPtxPdfContent_Font* createFontWithFallbacks(TPtxPdf_Document* pDoc)
 {
-    const TCHAR* fontNames[] = {
-        _T("Arial"),
-        _T("Liberation Sans"),
-        _T("DejaVu Sans"),
-        _T("Helvetica"),
-        _T("sans-serif")
-    };
-    int i;
+    const TCHAR*         fontNames[] = {_T("Arial"), _T("Liberation Sans"), _T("DejaVu Sans"), _T("Helvetica"),
+                                        _T("sans-serif")};
+    int                  i;
     TPtxPdfContent_Font* pFont = NULL;
 
     for (i = 0; i < (int)(sizeof(fontNames) / sizeof(fontNames[0])); i++)
@@ -147,16 +119,15 @@ TPtxPdfContent_Font* createFontWithFallbacks(TPtxPdf_Document* pDoc)
     }
     return NULL;
 }
-int createAndTagText(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage,
-                     TPtxPdfContent_ContentGenerator* pGen, TPtxPdfStructure_Node* pSectionNode,
-                     TPtxPdfContent_Font* pFont, double dTopY, const TCHAR* szTagName,
-                     const TCHAR* szTextContent, double dFontSize,
-                     double* pBottomY, TPtxPdfStructure_Node** ppCreatedNode)
+int createAndTagText(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage, TPtxPdfContent_ContentGenerator* pGen,
+                     TPtxPdfStructure_Node* pSectionNode, TPtxPdfContent_Font* pFont, double dTopY,
+                     const TCHAR* szTagName, const TCHAR* szTextContent, double dFontSize, double* pBottomY,
+                     TPtxPdfStructure_Node** ppCreatedNode)
 {
-    TPtxPdfStructure_Node*              pTextNode   = NULL;
-    TPtxPdfContent_Text*          pText       = NULL;
-    TPtxPdfContent_TextGenerator* pTextGen    = NULL;
-    TPtxPdfStructure_NodeList*          pChildren   = NULL;
+    TPtxPdfStructure_Node*        pTextNode = NULL;
+    TPtxPdfContent_Text*          pText     = NULL;
+    TPtxPdfContent_TextGenerator* pTextGen  = NULL;
+    TPtxPdfStructure_NodeList*    pChildren = NULL;
     double                        dBaselineY;
     double                        dFontAscent;
     double                        dFontDescent;
@@ -182,16 +153,16 @@ int createAndTagText(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage,
 
     /* Create text object */
     pText = PtxPdfContent_Text_Create(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pText, _T("Failed to create text object. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pText, _T("Failed to create text object. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     /* Add text node to section children */
     pChildren = PtxPdfStructure_Node_GetChildren(pSectionNode);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pChildren, _T("Failed to get children list. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfStructure_NodeList_Add(pChildren, pTextNode),
-                                      _T("Failed to add text node to section. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to add text node to section. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     /* Calculate text baseline position */
     dFontAscent = PtxPdfContent_Font_GetAscent(pFont);
@@ -230,7 +201,7 @@ int createAndTagText(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage,
 
     /* Return bottom coordinate (baseline - descent * fontSize) */
     dFontDescent = PtxPdfContent_Font_GetDescent(pFont);
-    *pBottomY = dBaselineY - dFontSize * dFontDescent;
+    *pBottomY    = dBaselineY - dFontSize * dFontDescent;
     if (ppCreatedNode != NULL)
         *ppCreatedNode = pTextNode;
 
@@ -246,18 +217,17 @@ cleanup:
 
     return iReturnValue;
 }
-int createAndTagImage(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage,
-                      TPtxPdfContent_ContentGenerator* pGen, const TCHAR* szImagePath,
-                      double dTopY, TPtxPdfStructure_Node* pParentNode)
+int createAndTagImage(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage, TPtxPdfContent_ContentGenerator* pGen,
+                      const TCHAR* szImagePath, double dTopY, TPtxPdfStructure_Node* pParentNode)
 {
     TPtxPdfStructure_Node*     pFigureNode = NULL;
     TPtxPdfStructure_NodeList* pChildren   = NULL;
-    FILE*                pImgStream  = NULL;
-    TPtxSys_StreamDescriptor imageStreamDesc;
-    TPtxPdfContent_Image* pImage     = NULL;
-    TPtxGeomInt_Size      imgSize;
-    double                dX, dWidth, dHeight;
-    TPtxGeomReal_Rectangle rect;
+    FILE*                      pImgStream  = NULL;
+    TPtxSys_StreamDescriptor   imageStreamDesc;
+    TPtxPdfContent_Image*      pImage = NULL;
+    TPtxGeomInt_Size           imgSize;
+    double                     dX, dWidth, dHeight;
+    TPtxGeomReal_Rectangle     rect;
 
     /* Create figure node */
     pFigureNode = PtxPdfStructure_Node_New(_T("Figure"), pOutDoc, pOutPage);
@@ -282,8 +252,8 @@ int createAndTagImage(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage,
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pChildren, _T("Failed to get children list. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfStructure_NodeList_Add(pChildren, pFigureNode),
-                                      _T("Failed to add figure node to parent. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to add figure node to parent. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     /* Tag content generator as figure node */
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_TagAs(pGen, pFigureNode, NULL),
@@ -295,16 +265,16 @@ int createAndTagImage(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage,
     GOTO_CLEANUP_IF_NULL(pImgStream, _T("Failed to open image file \"%s\".\n"), szImagePath);
     PtxSysCreateFILEStreamDescriptor(&imageStreamDesc, pImgStream, 0);
     pImage = PtxPdfContent_Image_Create(pOutDoc, &imageStreamDesc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pImage, _T("Failed to create image. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pImage, _T("Failed to create image. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     /* Calculate image rectangle preserving aspect ratio */
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_Image_GetSize(pImage, &imgSize),
                                       _T("Failed to get image size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
-    dX     = cmToPoints(2.5);
-    dWidth = cmToPoints(2.0);
+    dX      = cmToPoints(2.5);
+    dWidth  = cmToPoints(2.0);
     dHeight = dWidth * (double)imgSize.iHeight / (double)imgSize.iWidth; /* preserve aspect ratio */
 
     rect.dLeft   = dX;
@@ -340,28 +310,27 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                            pOutStream   = NULL;
+    FILE*                            pOutStream = NULL;
     TPtxSys_StreamDescriptor         outDescriptor;
-    TPtxPdf_Document*                pOutDoc      = NULL;
-    TPtxPdfContent_Font*             pFont        = NULL;
-    TPtxPdf_Page*                    pOutPage     = NULL;
-    TPtxPdf_PageList*                pOutPageList = NULL;
-    TPtxPdfContent_Content*          pContent     = NULL;
-    TPtxPdfContent_ContentGenerator* pGenerator   = NULL;
-    TPtxPdf_Metadata*                pMetadata    = NULL;
+    TPtxPdf_Document*                pOutDoc         = NULL;
+    TPtxPdfContent_Font*             pFont           = NULL;
+    TPtxPdf_Page*                    pOutPage        = NULL;
+    TPtxPdf_PageList*                pOutPageList    = NULL;
+    TPtxPdfContent_Content*          pContent        = NULL;
+    TPtxPdfContent_ContentGenerator* pGenerator      = NULL;
+    TPtxPdf_Metadata*                pMetadata       = NULL;
     TPtxPdfNav_ViewerSettings*       pViewerSettings = NULL;
-    TPtxPdfStructure_Tree*                 pStructTree  = NULL;
-    TPtxPdfStructure_Node*                 pDocNode     = NULL;
-    TPtxPdfStructure_Node*                 pSectionNode = NULL;
-    TPtxPdfStructure_NodeList*             pDocChildren = NULL;
-    TPtxPdfStructure_Node*                 pLastTextNode = NULL;
+    TPtxPdfStructure_Tree*           pStructTree     = NULL;
+    TPtxPdfStructure_Node*           pDocNode        = NULL;
+    TPtxPdfStructure_Node*           pSectionNode    = NULL;
+    TPtxPdfStructure_NodeList*       pDocChildren    = NULL;
+    TPtxPdfStructure_Node*           pLastTextNode   = NULL;
     TPtxPdf_Conformance              iConformance;
     TPtxGeomReal_Size                pageSize;
     double                           dCurrentY;
     double                           dPadding;
     TCHAR*                           szImagePath;
     TCHAR*                           szOutPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -376,7 +345,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     /* Set and check license key */
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -388,7 +357,7 @@ int _tmain(int argc, TCHAR* argv[])
     GOTO_CLEANUP_IF_NULL(pOutStream, _T("Failed to open output file \"%s\".\n"), szOutPath);
     PtxSysCreateFILEStreamDescriptor(&outDescriptor, pOutStream, 0);
     iConformance = ePtxPdf_Conformance_Pdf17;
-    pOutDoc = PtxPdf_Document_Create(&outDescriptor, &iConformance, NULL);
+    pOutDoc      = PtxPdf_Document_Create(&outDescriptor, &iConformance, NULL);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutDoc, _T("Output file \"%s\" cannot be created. %s (ErrorCode: 0x%08x).\n"),
                                      szOutPath, szErrorBuff, Ptx_GetLastError());
 
@@ -409,8 +378,8 @@ int _tmain(int argc, TCHAR* argv[])
 
     /* Set metadata title */
     pMetadata = PtxPdf_Document_GetMetadata(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pMetadata, _T("Failed to get metadata. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pMetadata, _T("Failed to get metadata. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Metadata_SetTitle(pMetadata, _T("TaggedPDF")),
                                       _T("Failed to set title. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -426,14 +395,14 @@ int _tmain(int argc, TCHAR* argv[])
     /* Create a page (DIN A4: 21cm x 29.7cm) */
     pageSize.dWidth  = cmToPoints(21.0);
     pageSize.dHeight = cmToPoints(29.7);
-    pOutPage = PtxPdf_Page_Create(pOutDoc, &pageSize);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPage, _T("Failed to create page. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    pOutPage         = PtxPdf_Page_Create(pOutDoc, &pageSize);
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPage, _T("Failed to create page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     /* Get page content and create content generator */
     pContent = PtxPdf_Page_GetContent(pOutPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get page content. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get page content. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     pGenerator = PtxPdfContent_ContentGenerator_New(pContent, FALSE);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator, _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
@@ -463,15 +432,13 @@ int _tmain(int argc, TCHAR* argv[])
     dPadding  = cmToPoints(1.0);
 
     /* Create header (H1) */
-    if (createAndTagText(pOutDoc, pOutPage, pGenerator, pSectionNode, pFont, dCurrentY,
-                         _T("H1"), _T("This is a properly tagged heading"), 24.0,
-                         &dCurrentY, &pLastTextNode) != 0)
+    if (createAndTagText(pOutDoc, pOutPage, pGenerator, pSectionNode, pFont, dCurrentY, _T("H1"),
+                         _T("This is a properly tagged heading"), 24.0, &dCurrentY, &pLastTextNode) != 0)
         goto cleanup;
 
     /* Add padding and create paragraph (P) */
     dCurrentY -= dPadding;
-    if (createAndTagText(pOutDoc, pOutPage, pGenerator, pSectionNode, pFont, dCurrentY,
-                         _T("P"),
+    if (createAndTagText(pOutDoc, pOutPage, pGenerator, pSectionNode, pFont, dCurrentY, _T("P"),
                          _T("This is a properly tagged paragraph. Both heading and paragraph belong to a section."),
                          12.0, &dCurrentY, &pLastTextNode) != 0)
         goto cleanup;
@@ -487,9 +454,8 @@ int _tmain(int argc, TCHAR* argv[])
 
     /* Add page to output document */
     pOutPageList = PtxPdf_Document_GetPages(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageList,
-                                     _T("Failed to get output page list. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                     Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageList, _T("Failed to get output page list. %s (ErrorCode: 0x%08x).\n"),
+                                     szErrorBuff, Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_PageList_Add(pOutPageList, pOutPage),
                                       _T("Failed to add page to output document. %s (ErrorCode: 0x%08x).\n"),
                                       szErrorBuff, Ptx_GetLastError());

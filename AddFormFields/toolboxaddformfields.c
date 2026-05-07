@@ -27,28 +27,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -155,10 +135,10 @@ int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 int addCheckBox(TPtxPdf_Document* pOutDoc, const TCHAR* szId, BOOL bChecked, TPtxPdf_Page* pPage,
                 TPtxGeomReal_Rectangle* pRect)
 {
-    TPtxPdfForms_CheckBox*  pCheckBox = NULL;
-    TPtxPdfForms_Widget*    pWidget   = NULL;
-    TPtxPdfForms_FieldNodeMap*   pFormFields;
-    TPtxPdfForms_WidgetList* pWidgets;
+    TPtxPdfForms_CheckBox*     pCheckBox = NULL;
+    TPtxPdfForms_Widget*       pWidget   = NULL;
+    TPtxPdfForms_FieldNodeMap* pFormFields;
+    TPtxPdfForms_WidgetList*   pWidgets;
 
     // Create a check box
     pCheckBox = PtxPdfForms_CheckBox_Create(pOutDoc);
@@ -175,8 +155,8 @@ int addCheckBox(TPtxPdf_Document* pOutDoc, const TCHAR* szId, BOOL bChecked, TPt
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidget, _T("Failed to create check box widget. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     pWidgets = PtxPdf_Page_GetWidgets(pPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_WidgetList_Add(pWidgets, pWidget),
                                       _T("Failed to add widget to page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -195,12 +175,12 @@ cleanup:
 int addComboBox(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHAR** pItemNames, int nItems,
                 const TCHAR* szValue, TPtxPdf_Page* pPage, TPtxGeomReal_Rectangle* pRect)
 {
-    TPtxPdfForms_ComboBox*   pComboBox   = NULL;
-    TPtxPdfForms_ChoiceItem* pChosenItem = NULL;
-    TPtxPdfForms_Widget*     pWidget     = NULL;
-    TPtxPdfForms_FieldNodeMap*    pFormFields;
-    TPtxPdfForms_WidgetList* pWidgets;
-    BOOL                     bItemChosen = FALSE;
+    TPtxPdfForms_ComboBox*     pComboBox   = NULL;
+    TPtxPdfForms_ChoiceItem*   pChosenItem = NULL;
+    TPtxPdfForms_Widget*       pWidget     = NULL;
+    TPtxPdfForms_FieldNodeMap* pFormFields;
+    TPtxPdfForms_WidgetList*   pWidgets;
+    BOOL                       bItemChosen = FALSE;
 
     // Create a combo box
     pComboBox = PtxPdfForms_ComboBox_Create(pOutDoc);
@@ -242,8 +222,8 @@ int addComboBox(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHAR** pIte
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidget, _T("Failed to create combo box widget. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     pWidgets = PtxPdf_Page_GetWidgets(pPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_WidgetList_Add(pWidgets, pWidget),
                                       _T("Failed to add widget to page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -262,16 +242,16 @@ cleanup:
 int addListBox(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHAR** pItemNames, int nItems,
                const TCHAR** pChosenNames, int nChosen, TPtxPdf_Page* pPage, TPtxGeomReal_Rectangle* pRect)
 {
-    TPtxPdfForms_ListBox*        pListBox    = NULL;
-    TPtxPdfForms_Widget*         pWidget     = NULL;
+    TPtxPdfForms_ListBox*        pListBox     = NULL;
+    TPtxPdfForms_Widget*         pWidget      = NULL;
     TPtxPdfForms_ChoiceItemList* pChosenItems = NULL;
-    TPtxPdfForms_FieldNodeMap*        pFormFields;
+    TPtxPdfForms_FieldNodeMap*   pFormFields;
     TPtxPdfForms_WidgetList*     pWidgets;
 
     // Create a list box
     pListBox = PtxPdfForms_ListBox_Create(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pListBox, _T("Failed to create list box. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pListBox, _T("Failed to create list box. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Allow multiple selections
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_ListBox_SetAllowMultiSelect(pListBox, TRUE),
@@ -308,8 +288,8 @@ int addListBox(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHAR** pItem
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidget, _T("Failed to create list box widget. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     pWidgets = PtxPdf_Page_GetWidgets(pPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_WidgetList_Add(pWidgets, pWidget),
                                       _T("Failed to add widget to page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -329,7 +309,7 @@ int addRadioButtonGroup(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHA
                         int iChosen, TPtxPdf_Page* pPage, TPtxGeomReal_Rectangle* pRect)
 {
     TPtxPdfForms_RadioButtonGroup* pGroup = NULL;
-    TPtxPdfForms_FieldNodeMap*          pFormFields;
+    TPtxPdfForms_FieldNodeMap*     pFormFields;
     TPtxPdfForms_WidgetList*       pWidgets;
     double                         dButtonWidth;
 
@@ -340,8 +320,8 @@ int addRadioButtonGroup(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHA
 
     // Get the page's widgets
     pWidgets = PtxPdf_Page_GetWidgets(pPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Compute the width of the sub-rectangles
     dButtonWidth = (pRect->dRight - pRect->dLeft) / nButtons;
@@ -361,16 +341,15 @@ int addRadioButtonGroup(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHA
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pButton, _T("Failed to create radio button. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
         TPtxPdfForms_Widget* pWidget = PtxPdfForms_RadioButton_AddNewWidget(pButton, &buttonRect);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidget,
-                                         _T("Failed to create radio button widget. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidget, _T("Failed to create radio button widget. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         // Check if this is the chosen button
         if (i == iChosen)
         {
             GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_RadioButtonGroup_SetChosenButton(pGroup, pButton),
-                                              _T("Failed to set chosen button. %s (ErrorCode: 0x%08x).\n"),
-                                              szErrorBuff, Ptx_GetLastError());
+                                              _T("Failed to set chosen button. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                              Ptx_GetLastError());
         }
 
         // Add the widget to the page's widgets
@@ -383,10 +362,9 @@ int addRadioButtonGroup(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHA
     pFormFields = PtxPdf_Document_GetFormFields(pOutDoc);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFormFields, _T("Failed to get form fields. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-        PtxPdfForms_FieldNodeMap_Set(pFormFields, szId, (TPtxPdfForms_FieldNode*)pGroup),
-        _T("Failed to add radio button group to form fields. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-        Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_FieldNodeMap_Set(pFormFields, szId, (TPtxPdfForms_FieldNode*)pGroup),
+                                      _T("Failed to add radio button group to form fields. %s (ErrorCode: 0x%08x).\n"),
+                                      szErrorBuff, Ptx_GetLastError());
 
 cleanup:
     return iReturnValue;
@@ -394,15 +372,15 @@ cleanup:
 int addGeneralTextField(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHAR* szValue, TPtxPdf_Page* pPage,
                         TPtxGeomReal_Rectangle* pRect)
 {
-    TPtxPdfForms_GeneralTextField* pField = NULL;
+    TPtxPdfForms_GeneralTextField* pField  = NULL;
     TPtxPdfForms_Widget*           pWidget = NULL;
-    TPtxPdfForms_FieldNodeMap*          pFormFields;
+    TPtxPdfForms_FieldNodeMap*     pFormFields;
     TPtxPdfForms_WidgetList*       pWidgets;
 
     // Create a general text field
     pField = PtxPdfForms_GeneralTextField_Create(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pField, _T("Failed to create text field. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pField, _T("Failed to create text field. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Set the text value (must be set before adding widget)
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_TextField_SetText((TPtxPdfForms_TextField*)pField, szValue),
@@ -414,8 +392,8 @@ int addGeneralTextField(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHA
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidget, _T("Failed to create text field widget. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     pWidgets = PtxPdf_Page_GetWidgets(pPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pWidgets, _T("Failed to get page widgets. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_WidgetList_Add(pWidgets, pWidget),
                                       _T("Failed to add widget to page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -424,34 +402,33 @@ int addGeneralTextField(TPtxPdf_Document* pOutDoc, const TCHAR* szId, const TCHA
     pFormFields = PtxPdf_Document_GetFormFields(pOutDoc);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFormFields, _T("Failed to get form fields. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-        PtxPdfForms_FieldNodeMap_Set(pFormFields, szId, (TPtxPdfForms_FieldNode*)pField),
-        _T("Failed to add text field to form fields. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfForms_FieldNodeMap_Set(pFormFields, szId, (TPtxPdfForms_FieldNode*)pField),
+                                      _T("Failed to add text field to form fields. %s (ErrorCode: 0x%08x).\n"),
+                                      szErrorBuff, Ptx_GetLastError());
 
 cleanup:
     return iReturnValue;
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                    pInStream     = NULL;
-    TPtxSys_StreamDescriptor descriptor;
-    TPtxPdf_Document*        pInDoc        = NULL;
-    FILE*                    pOutStream    = NULL;
-    TPtxSys_StreamDescriptor outDescriptor;
-    TPtxPdf_Document*        pOutDoc       = NULL;
-    TPtxPdf_PageList*        pInPageList   = NULL;
-    TPtxPdf_PageList*        pOutPageList  = NULL;
-    TPtxPdf_PageList*        pInPageRange  = NULL;
-    TPtxPdf_PageList*        pOutPageRange = NULL;
-    TPtxPdf_Page*            pInPage       = NULL;
-    TPtxPdf_Page*            pOutPage      = NULL;
-    TPtxPdf_PageCopyOptions* pCopyOptions  = NULL;
-    TPtxPdf_Conformance      iConformance;
-    TPtxPdfForms_FieldNodeMap*    pInFormFields  = NULL;
-    TPtxPdfForms_FieldNodeMap*    pOutFormFields = NULL;
-    TCHAR*                   szInPath;
-    TCHAR*                   szOutPath;
-
+    FILE*                      pInStream = NULL;
+    TPtxSys_StreamDescriptor   descriptor;
+    TPtxPdf_Document*          pInDoc     = NULL;
+    FILE*                      pOutStream = NULL;
+    TPtxSys_StreamDescriptor   outDescriptor;
+    TPtxPdf_Document*          pOutDoc       = NULL;
+    TPtxPdf_PageList*          pInPageList   = NULL;
+    TPtxPdf_PageList*          pOutPageList  = NULL;
+    TPtxPdf_PageList*          pInPageRange  = NULL;
+    TPtxPdf_PageList*          pOutPageRange = NULL;
+    TPtxPdf_Page*              pInPage       = NULL;
+    TPtxPdf_Page*              pOutPage      = NULL;
+    TPtxPdf_PageCopyOptions*   pCopyOptions  = NULL;
+    TPtxPdf_Conformance        iConformance;
+    TPtxPdfForms_FieldNodeMap* pInFormFields  = NULL;
+    TPtxPdfForms_FieldNodeMap* pOutFormFields = NULL;
+    TCHAR*                     szInPath;
+    TCHAR*                     szOutPath;
 
     setlocale(LC_CTYPE, "");
 
@@ -466,7 +443,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -502,9 +479,9 @@ int _tmain(int argc, TCHAR* argv[])
     {
         int iEnd = PtxPdfForms_FieldNodeMap_GetEnd(pInFormFields);
         for (int it = PtxPdfForms_FieldNodeMap_GetBegin(pInFormFields); it != iEnd;
-             it = PtxPdfForms_FieldNodeMap_GetNext(pInFormFields, it))
+             it     = PtxPdfForms_FieldNodeMap_GetNext(pInFormFields, it))
         {
-            TCHAR szKey[256];
+            TCHAR  szKey[256];
             size_t nKeySize = PtxPdfForms_FieldNodeMap_GetKey(pInFormFields, it, szKey, ARRAY_SIZE(szKey));
             if (nKeySize > 0)
             {
@@ -554,14 +531,20 @@ int _tmain(int argc, TCHAR* argv[])
         TPtxGeomReal_Rectangle rect;
 
         // Add CheckBox
-        rect.dLeft = 50; rect.dBottom = 300; rect.dRight = 70; rect.dTop = 320;
+        rect.dLeft   = 50;
+        rect.dBottom = 300;
+        rect.dRight  = 70;
+        rect.dTop    = 320;
         if (addCheckBox(pOutDoc, _T("Check Box ID"), TRUE, pOutPage, &rect) != 0)
             goto cleanup;
 
         // Add ComboBox
         {
             const TCHAR* comboItems[] = {_T("item 1"), _T("item 2")};
-            rect.dLeft = 50; rect.dBottom = 260; rect.dRight = 210; rect.dTop = 280;
+            rect.dLeft                = 50;
+            rect.dBottom              = 260;
+            rect.dRight               = 210;
+            rect.dTop                 = 280;
             if (addComboBox(pOutDoc, _T("Combo Box ID"), comboItems, 2, _T("item 1"), pOutPage, &rect) != 0)
                 goto cleanup;
         }
@@ -570,7 +553,10 @@ int _tmain(int argc, TCHAR* argv[])
         {
             const TCHAR* listItems[]   = {_T("item 1"), _T("item 2"), _T("item 3")};
             const TCHAR* chosenItems[] = {_T("item 1"), _T("item 3")};
-            rect.dLeft = 50; rect.dBottom = 160; rect.dRight = 210; rect.dTop = 240;
+            rect.dLeft                 = 50;
+            rect.dBottom               = 160;
+            rect.dRight                = 210;
+            rect.dTop                  = 240;
             if (addListBox(pOutDoc, _T("List Box ID"), listItems, 3, chosenItems, 2, pOutPage, &rect) != 0)
                 goto cleanup;
         }
@@ -578,13 +564,19 @@ int _tmain(int argc, TCHAR* argv[])
         // Add RadioButtonGroup
         {
             const TCHAR* radioItems[] = {_T("A"), _T("B"), _T("C")};
-            rect.dLeft = 50; rect.dBottom = 120; rect.dRight = 210; rect.dTop = 140;
+            rect.dLeft                = 50;
+            rect.dBottom              = 120;
+            rect.dRight               = 210;
+            rect.dTop                 = 140;
             if (addRadioButtonGroup(pOutDoc, _T("Radio Button ID"), radioItems, 3, 0, pOutPage, &rect) != 0)
                 goto cleanup;
         }
 
         // Add GeneralTextField
-        rect.dLeft = 50; rect.dBottom = 80; rect.dRight = 210; rect.dTop = 100;
+        rect.dLeft   = 50;
+        rect.dBottom = 80;
+        rect.dRight  = 210;
+        rect.dTop    = 100;
         if (addGeneralTextField(pOutDoc, _T("Text ID"), _T("Text"), pOutPage, &rect) != 0)
             goto cleanup;
     }
@@ -598,13 +590,11 @@ int _tmain(int argc, TCHAR* argv[])
     if (PtxPdf_PageList_GetCount(pInPageList) > 1)
     {
         pInPageRange = PtxPdf_PageList_GetRange(pInPageList, 1, PtxPdf_PageList_GetCount(pInPageList) - 1);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPageRange,
-                                         _T("Failed to get page range. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                         Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPageRange, _T("Failed to get page range. %s (ErrorCode: 0x%08x).\n"),
+                                         szErrorBuff, Ptx_GetLastError());
         pOutPageRange = PtxPdf_PageList_Copy(pOutDoc, pInPageRange, pCopyOptions);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageRange,
-                                         _T("Failed to copy page range. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                                         Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageRange, _T("Failed to copy page range. %s (ErrorCode: 0x%08x).\n"),
+                                         szErrorBuff, Ptx_GetLastError());
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_PageList_AddRange(pOutPageList, pOutPageRange),
                                           _T("Failed to add page range. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                           Ptx_GetLastError());
