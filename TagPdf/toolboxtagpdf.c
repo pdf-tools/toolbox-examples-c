@@ -29,28 +29,8 @@
 #include <math.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -158,22 +138,22 @@ int copyAndTagTextElement(TPtxPdfContent_TextElement* pTextElement, TPtxPdfStruc
                           TPtxPdfContent_ContentGenerator* pGenerator, TPtxPdf_Page* pOutPage,
                           TPtxPdf_Document* pOutDoc, const TCHAR* szTag, TPtxPdfStructure_Node** ppOutNode)
 {
-    TPtxPdfStructure_Node*           pElement   = NULL;
-    TPtxPdfStructure_NodeList*       pChildren  = NULL;
-    TPtxPdfContent_Text*       pTextList  = NULL;
+    TPtxPdfStructure_Node*       pElement  = NULL;
+    TPtxPdfStructure_NodeList*   pChildren = NULL;
+    TPtxPdfContent_Text*         pTextList = NULL;
     TPtxPdfContent_TextFragment* pFragment = NULL;
-    size_t                     nTextLen;
-    TCHAR*                     szText     = NULL;
+    size_t                       nTextLen;
+    TCHAR*                       szText = NULL;
 
     /* Create structure node */
     pElement = PtxPdfStructure_Node_New(szTag, pOutDoc, pOutPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pElement, _T("Failed to create node. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pElement, _T("Failed to create node. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     /* Get the text content from the first text fragment */
     pTextList = PtxPdfContent_TextElement_GetText(pTextElement);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTextList, _T("Failed to get text list. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTextList, _T("Failed to get text list. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     pFragment = PtxPdfContent_Text_Get(pTextList, 0);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFragment, _T("Failed to get text fragment. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
@@ -198,8 +178,8 @@ int copyAndTagTextElement(TPtxPdfContent_TextElement* pTextElement, TPtxPdfStruc
 
     /* Add node to section children */
     pChildren = PtxPdfStructure_Node_GetChildren(pSection);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pChildren, _T("Failed to get children. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pChildren, _T("Failed to get children. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfStructure_NodeList_Add(pChildren, pElement),
                                       _T("Failed to add node. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -233,17 +213,16 @@ cleanup:
 
     return iReturnValue;
 }
-int copyAndTagImageElement(TPtxPdfContent_ImageElement* pImageElement,
-                           TPtxPdfContent_ContentGenerator* pGenerator, TPtxPdf_Page* pOutPage,
-                           TPtxPdf_Document* pOutDoc, const TCHAR* szAlternateText,
+int copyAndTagImageElement(TPtxPdfContent_ImageElement* pImageElement, TPtxPdfContent_ContentGenerator* pGenerator,
+                           TPtxPdf_Page* pOutPage, TPtxPdf_Document* pOutDoc, const TCHAR* szAlternateText,
                            TPtxPdfStructure_Node* pParentNode)
 {
-    TPtxPdfStructure_Node*              pImgNode       = NULL;
-    TPtxPdfStructure_NodeList*          pChildren      = NULL;
-    TPtxGeomReal_Rectangle        boundingBox;
-    TPtxGeomReal_AffineTransform  transform;
+    TPtxPdfStructure_Node*       pImgNode  = NULL;
+    TPtxPdfStructure_NodeList*   pChildren = NULL;
+    TPtxGeomReal_Rectangle       boundingBox;
+    TPtxGeomReal_AffineTransform transform;
     TPtxGeomReal_Quadrilateral   quad;
-    TPtxGeomReal_Rectangle        rect;
+    TPtxGeomReal_Rectangle       rect;
 
     /* Create figure node */
     pImgNode = PtxPdfStructure_Node_New(_T("Figure"), pOutDoc, pOutPage);
@@ -265,9 +244,9 @@ int copyAndTagImageElement(TPtxPdfContent_ImageElement* pImageElement,
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
         PtxPdfContent_ContentElement_GetTransform((TPtxPdfContent_ContentElement*)pImageElement, &transform),
         _T("Failed to get transform. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-        PtxGeomReal_AffineTransform_TransformRectangle(&transform, &boundingBox, &quad),
-        _T("Failed to transform rectangle. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxGeomReal_AffineTransform_TransformRectangle(&transform, &boundingBox, &quad),
+                                      _T("Failed to transform rectangle. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     rect.dLeft   = quad.BottomLeft.dX;
     rect.dBottom = quad.BottomLeft.dY;
@@ -285,8 +264,8 @@ int copyAndTagImageElement(TPtxPdfContent_ImageElement* pImageElement,
 
     /* Add to parent children */
     pChildren = PtxPdfStructure_Node_GetChildren(pParentNode);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pChildren, _T("Failed to get children. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pChildren, _T("Failed to get children. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfStructure_NodeList_Add(pChildren, pImgNode),
                                       _T("Failed to add figure node. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -313,18 +292,18 @@ cleanup:
 }
 int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Document* pOutDoc)
 {
-    TPtxPdfContent_Content*                  pInContent   = NULL;
-    TPtxPdfContent_Content*                  pOutContent  = NULL;
-    TPtxPdfContent_ContentExtractor*         pExtractor   = NULL;
-    TPtxPdfContent_ContentGenerator*         pGenerator   = NULL;
-    TPtxPdfContent_ContentExtractorIterator* pIterator    = NULL;
-    TPtxPdfContent_ContentElement*           pInElement   = NULL;
-    TPtxPdfContent_ContentElement*           pOutElement  = NULL;
-    TPtxPdfStructure_Tree*                         pStructTree  = NULL;
-    TPtxPdfStructure_Node*                         pDocNode     = NULL;
-    TPtxPdfStructure_Node*                         pSection     = NULL;
-    TPtxPdfStructure_NodeList*                     pDocChildren = NULL;
-    TPtxPdfStructure_Node*                         pParagraphNode = NULL;
+    TPtxPdfContent_Content*                  pInContent     = NULL;
+    TPtxPdfContent_Content*                  pOutContent    = NULL;
+    TPtxPdfContent_ContentExtractor*         pExtractor     = NULL;
+    TPtxPdfContent_ContentGenerator*         pGenerator     = NULL;
+    TPtxPdfContent_ContentExtractorIterator* pIterator      = NULL;
+    TPtxPdfContent_ContentElement*           pInElement     = NULL;
+    TPtxPdfContent_ContentElement*           pOutElement    = NULL;
+    TPtxPdfStructure_Tree*                   pStructTree    = NULL;
+    TPtxPdfStructure_Node*                   pDocNode       = NULL;
+    TPtxPdfStructure_Node*                   pSection       = NULL;
+    TPtxPdfStructure_NodeList*               pDocChildren   = NULL;
+    TPtxPdfStructure_Node*                   pParagraphNode = NULL;
 
     /* Create structure tree */
     pStructTree = PtxPdfStructure_Tree_New(pOutDoc);
@@ -343,8 +322,8 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pDocChildren, _T("Failed to get document children. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfStructure_NodeList_Add(pDocChildren, pSection),
-                                      _T("Failed to add section to document. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to add section to document. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     /* Get input content */
     pInContent = PtxPdf_Page_GetContent(pInPage);
@@ -366,8 +345,8 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
 
     /* Iterate over all content elements */
     pIterator = PtxPdfContent_ContentExtractor_GetIterator(pExtractor);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pIterator, _T("Failed to get iterator. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pIterator, _T("Failed to get iterator. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     PtxPdfContent_ContentExtractorIterator_MoveNext(pIterator);
 
     while ((pInElement = PtxPdfContent_ContentExtractorIterator_GetValue(pIterator)) != NULL)
@@ -385,7 +364,7 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
             /* Get text content to determine which tag to use */
             {
                 TPtxPdfContent_TextElement*  pTextElem = (TPtxPdfContent_TextElement*)pOutElement;
-                TPtxPdfContent_Text*     pTextList = PtxPdfContent_TextElement_GetText(pTextElem);
+                TPtxPdfContent_Text*         pTextList = PtxPdfContent_TextElement_GetText(pTextElem);
                 TPtxPdfContent_TextFragment* pFrag     = NULL;
                 size_t                       nLen;
                 TCHAR*                       szFragText = NULL;
@@ -406,7 +385,7 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
                                 if (_tcscmp(szFragText, _T("This is a properly tagged heading")) == 0)
                                 {
                                     if (copyAndTagTextElement(pTextElem, pSection, pGenerator, pOutPage, pOutDoc,
-                                                             _T("H1"), NULL) != 0)
+                                                              _T("H1"), NULL) != 0)
                                     {
                                         free(szFragText);
                                         Ptx_Release(pFrag);
@@ -414,10 +393,11 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
                                         goto cleanup;
                                     }
                                 }
-                                else if (_tcscmp(szFragText, _T("This is a properly tagged paragraph. Both heading and paragraph belong to a section.")) == 0)
+                                else if (_tcscmp(szFragText, _T("This is a properly tagged paragraph. Both heading ")
+                                                             _T("and paragraph belong to a section.")) == 0)
                                 {
                                     if (copyAndTagTextElement(pTextElem, pSection, pGenerator, pOutPage, pOutDoc,
-                                                             _T("P"), &pParagraphNode) != 0)
+                                                              _T("P"), &pParagraphNode) != 0)
                                     {
                                         free(szFragText);
                                         Ptx_Release(pFrag);
@@ -439,35 +419,32 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
         {
             /* Copy image element to output document */
             pOutElement = PtxPdfContent_ContentElement_Copy(pOutDoc, pInElement);
-            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutElement,
-                                             _T("Failed to copy image element. %s (ErrorCode: 0x%08x).\n"),
+            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutElement, _T("Failed to copy image element. %s (ErrorCode: 0x%08x).\n"),
                                              szErrorBuff, Ptx_GetLastError());
 
             {
                 TPtxPdfContent_ImageElement* pImgElem = (TPtxPdfContent_ImageElement*)pOutElement;
                 TPtxGeomReal_Rectangle       boundingBox;
                 TPtxGeomReal_AffineTransform transform;
-                TPtxGeomReal_Quadrilateral  quad;
+                TPtxGeomReal_Quadrilateral   quad;
 
                 GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
                     PtxPdfContent_ContentElement_GetBoundingBox(pOutElement, &boundingBox),
                     _T("Failed to get bounding box. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
-                GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-                    PtxPdfContent_ContentElement_GetTransform(pOutElement, &transform),
-                    _T("Failed to get transform. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
+                GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentElement_GetTransform(pOutElement, &transform),
+                                                  _T("Failed to get transform. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                                  Ptx_GetLastError());
                 GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
                     PtxGeomReal_AffineTransform_TransformRectangle(&transform, &boundingBox, &quad),
                     _T("Failed to transform rectangle. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
 
                 /* Check if this is the logo image by approximate position */
-                if (fabs(quad.BottomLeft.dX - 70.86) < 0.5 &&
-                    fabs(quad.BottomLeft.dY - 632.65) < 0.5 &&
-                    fabs(quad.TopRight.dX - 127.559) < 0.5 &&
-                    fabs(quad.TopRight.dY - 689.34) < 0.5)
+                if (fabs(quad.BottomLeft.dX - 70.86) < 0.5 && fabs(quad.BottomLeft.dY - 632.65) < 0.5 &&
+                    fabs(quad.TopRight.dX - 127.559) < 0.5 && fabs(quad.TopRight.dY - 689.34) < 0.5)
                 {
                     TPtxPdfStructure_Node* pImgParent = (pParagraphNode != NULL) ? pParagraphNode : pSection;
-                    if (copyAndTagImageElement(pImgElem, pGenerator, pOutPage, pOutDoc,
-                                              _T("PdfTools AG Logo"), pImgParent) != 0)
+                    if (copyAndTagImageElement(pImgElem, pGenerator, pOutPage, pOutDoc, _T("PdfTools AG Logo"),
+                                               pImgParent) != 0)
                         goto cleanup;
                 }
             }
@@ -477,8 +454,7 @@ int copyAndTagContent(TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage, TPtxPdf_Doc
             /* Copy group element without content (recursive handling simplified) */
             pOutElement = (TPtxPdfContent_ContentElement*)PtxPdfContent_GroupElement_CopyWithoutContent(
                 pOutDoc, (TPtxPdfContent_GroupElement*)pInElement);
-            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutElement,
-                                             _T("Failed to copy group element. %s (ErrorCode: 0x%08x).\n"),
+            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutElement, _T("Failed to copy group element. %s (ErrorCode: 0x%08x).\n"),
                                              szErrorBuff, Ptx_GetLastError());
         }
 
@@ -515,23 +491,22 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                      pInStream  = NULL;
+    FILE*                      pInStream = NULL;
     TPtxSys_StreamDescriptor   inDescriptor;
     TPtxPdf_Document*          pInDoc     = NULL;
     FILE*                      pOutStream = NULL;
     TPtxSys_StreamDescriptor   outDescriptor;
-    TPtxPdf_Document*          pOutDoc    = NULL;
+    TPtxPdf_Document*          pOutDoc      = NULL;
     TPtxPdf_PageList*          pInPageList  = NULL;
     TPtxPdf_PageList*          pOutPageList = NULL;
-    TPtxPdf_Page*              pInPage    = NULL;
-    TPtxPdf_Page*              pOutPage   = NULL;
+    TPtxPdf_Page*              pInPage      = NULL;
+    TPtxPdf_Page*              pOutPage     = NULL;
     TPtxPdf_Conformance        iConformance;
     TPtxGeomReal_Size          pageSize;
-    TPtxPdf_Metadata*          pMetadata  = NULL;
+    TPtxPdf_Metadata*          pMetadata       = NULL;
     TPtxPdfNav_ViewerSettings* pViewerSettings = NULL;
     TCHAR*                     szInPath;
     TCHAR*                     szOutPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -546,7 +521,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     /* Set and check license key */
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -566,7 +541,7 @@ int _tmain(int argc, TCHAR* argv[])
     GOTO_CLEANUP_IF_NULL(pOutStream, _T("Failed to open output file \"%s\".\n"), szOutPath);
     PtxSysCreateFILEStreamDescriptor(&outDescriptor, pOutStream, 0);
     iConformance = PtxPdf_Document_GetConformance(pInDoc);
-    pOutDoc = PtxPdf_Document_Create(&outDescriptor, &iConformance, NULL);
+    pOutDoc      = PtxPdf_Document_Create(&outDescriptor, &iConformance, NULL);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutDoc, _T("Output file \"%s\" cannot be created. %s (ErrorCode: 0x%08x).\n"),
                                      szOutPath, szErrorBuff, Ptx_GetLastError());
 
@@ -585,8 +560,8 @@ int _tmain(int argc, TCHAR* argv[])
 
     /* Set metadata title */
     pMetadata = PtxPdf_Document_GetMetadata(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pMetadata, _T("Failed to get metadata. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pMetadata, _T("Failed to get metadata. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Metadata_SetTitle(pMetadata, _T("TaggedPDF")),
                                       _T("Failed to set title. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
@@ -604,8 +579,8 @@ int _tmain(int argc, TCHAR* argv[])
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPageList, _T("Failed to get input pages. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     pInPage = PtxPdf_PageList_Get(pInPageList, 0);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPage, _T("Failed to get first page. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPage, _T("Failed to get first page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     /* Create empty output page with same size */
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pInPage, &pageSize),

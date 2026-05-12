@@ -29,28 +29,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -157,11 +137,11 @@ int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 // Check if a paint color is white
 BOOL isWhite(TPtxPdfContent_Paint* pPaint)
 {
-    TPtxPdfContent_ColorSpace*     pColorSpace = NULL;
-    TPtxPdfContent_ColorSpaceType  csType;
-    double                         colors[4];
-    int                            nColors;
-    BOOL                           bIsWhite = FALSE;
+    TPtxPdfContent_ColorSpace*    pColorSpace = NULL;
+    TPtxPdfContent_ColorSpaceType csType;
+    double                        colors[4];
+    int                           nColors;
+    BOOL                          bIsWhite = FALSE;
 
     if (pPaint == NULL)
         return FALSE;
@@ -215,8 +195,7 @@ BOOL isWhite(TPtxPdfContent_Paint* pPaint)
 
     return bIsWhite;
 }
-int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOutContent,
-                TPtxPdf_Document* pOutDoc)
+int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOutContent, TPtxPdf_Document* pOutDoc)
 {
     TPtxPdfContent_ContentExtractor*         pExtractor       = NULL;
     TPtxPdfContent_ContentGenerator*         pGenerator       = NULL;
@@ -231,14 +210,12 @@ int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOut
 
     // Create content extractor for the input content
     pExtractor = PtxPdfContent_ContentExtractor_New(pInContent);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pExtractor,
-                                     _T("Failed to create content extractor. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pExtractor, _T("Failed to create content extractor. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Create content generator for the output content
     pGenerator = PtxPdfContent_ContentGenerator_New(pOutContent, FALSE);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator,
-                                     _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator, _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Get iterator
@@ -249,22 +226,21 @@ int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOut
     // Iterate over all content elements
     while ((pInElement = PtxPdfContent_ContentExtractorIterator_GetValue(pIterator)) != NULL)
     {
-        TPtxPdfContent_ContentElementType iType = PtxPdfContent_ContentElement_GetType(pInElement);
-        BOOL bAppendElement = TRUE;
+        TPtxPdfContent_ContentElementType iType          = PtxPdfContent_ContentElement_GetType(pInElement);
+        BOOL                              bAppendElement = TRUE;
 
         if (iType == ePtxPdfContent_ContentElementType_GroupElement)
         {
             // Special treatment for group elements
-            pOutGroupElem = PtxPdfContent_GroupElement_CopyWithoutContent(
-                pOutDoc, (TPtxPdfContent_GroupElement*)pInElement);
+            pOutGroupElem =
+                PtxPdfContent_GroupElement_CopyWithoutContent(pOutDoc, (TPtxPdfContent_GroupElement*)pInElement);
             GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroupElem,
-                                             _T("Failed to copy group element. %s (ErrorCode: 0x%08x).\n"),
-                                             szErrorBuff, Ptx_GetLastError());
+                                             _T("Failed to copy group element. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                             Ptx_GetLastError());
 
             // Get input group content
             pInGroup = PtxPdfContent_GroupElement_GetGroup((TPtxPdfContent_GroupElement*)pInElement);
-            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInGroup,
-                                             _T("Failed to get input group. %s (ErrorCode: 0x%08x).\n"),
+            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInGroup, _T("Failed to get input group. %s (ErrorCode: 0x%08x).\n"),
                                              szErrorBuff, Ptx_GetLastError());
             pInGroupContent = PtxPdfContent_Group_GetContent(pInGroup);
             GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInGroupContent,
@@ -273,8 +249,7 @@ int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOut
 
             // Get output group content
             pOutGroup = PtxPdfContent_GroupElement_GetGroup(pOutGroupElem);
-            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroup,
-                                             _T("Failed to get output group. %s (ErrorCode: 0x%08x).\n"),
+            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroup, _T("Failed to get output group. %s (ErrorCode: 0x%08x).\n"),
                                              szErrorBuff, Ptx_GetLastError());
             pOutGroupContent = PtxPdfContent_Group_GetContent(pOutGroup);
             GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroupContent,
@@ -286,10 +261,10 @@ int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOut
                 goto cleanup;
 
             // Append the group element
-            GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-                PtxPdfContent_ContentGenerator_AppendContentElement(pGenerator,
-                                                                     (TPtxPdfContent_ContentElement*)pOutGroupElem),
-                _T("Failed to append group element. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
+            GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_AppendContentElement(
+                                                  pGenerator, (TPtxPdfContent_ContentElement*)pOutGroupElem),
+                                              _T("Failed to append group element. %s (ErrorCode: 0x%08x).\n"),
+                                              szErrorBuff, Ptx_GetLastError());
 
             Ptx_Release(pInGroup);
             pInGroup = NULL;
@@ -324,11 +299,11 @@ int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOut
                         TPtxPdfContent_TextFragment* pFragment = PtxPdfContent_Text_Get(pText, iFrag);
                         if (pFragment != NULL)
                         {
-                            TPtxPdfContent_Paint*   pFillPaint   = PtxPdfContent_TextFragment_GetFill(pFragment);
-                            TPtxPdfContent_Stroke*  pStroke      = PtxPdfContent_TextFragment_GetStroke(pFragment);
-                            TPtxPdfContent_Paint*   pStrokePaint = NULL;
-                            BOOL                    bFillWhite;
-                            BOOL                    bStrokeWhite;
+                            TPtxPdfContent_Paint*  pFillPaint   = PtxPdfContent_TextFragment_GetFill(pFragment);
+                            TPtxPdfContent_Stroke* pStroke      = PtxPdfContent_TextFragment_GetStroke(pFragment);
+                            TPtxPdfContent_Paint*  pStrokePaint = NULL;
+                            BOOL                   bFillWhite;
+                            BOOL                   bStrokeWhite;
 
                             if (pStroke != NULL)
                                 pStrokePaint = PtxPdfContent_Stroke_GetPaint(pStroke);
@@ -362,8 +337,7 @@ int copyContent(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOut
             {
                 GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
                     PtxPdfContent_ContentGenerator_AppendContentElement(pGenerator, pOutElement),
-                    _T("Failed to append content element. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
-                    Ptx_GetLastError());
+                    _T("Failed to append content element. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
             }
 
             Ptx_Release(pOutElement);
@@ -401,10 +375,10 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                    pInStream    = NULL;
+    FILE*                    pInStream = NULL;
     TPtxSys_StreamDescriptor inDescriptor;
-    TPtxPdf_Document*        pInDoc       = NULL;
-    FILE*                    pOutStream   = NULL;
+    TPtxPdf_Document*        pInDoc     = NULL;
+    FILE*                    pOutStream = NULL;
     TPtxSys_StreamDescriptor outDescriptor;
     TPtxPdf_Document*        pOutDoc      = NULL;
     TPtxPdf_PageList*        pInPageList  = NULL;
@@ -416,7 +390,6 @@ int _tmain(int argc, TCHAR* argv[])
     TPtxPdf_Conformance      iConformance;
     TCHAR*                   szInPath;
     TCHAR*                   szOutPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -431,7 +404,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -477,13 +450,13 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Get input page
         pInPage = PtxPdf_PageList_Get(pInPageList, iPage);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"),
-                                         iPage + 1, szErrorBuff, Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"), iPage + 1,
+                                         szErrorBuff, Ptx_GetLastError());
 
         // Get page size
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pInPage, &pageSize),
-                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Create empty output page with same size
         pOutPage = PtxPdf_Page_Create(pOutDoc, &pageSize);
@@ -492,8 +465,7 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Get input and output content
         pInContent = PtxPdf_Page_GetContent(pInPage);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInContent,
-                                         _T("Failed to get input page content. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInContent, _T("Failed to get input page content. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
         pOutContent = PtxPdf_Page_GetContent(pOutPage);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutContent,

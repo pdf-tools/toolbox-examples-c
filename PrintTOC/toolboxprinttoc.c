@@ -27,28 +27,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -137,7 +117,7 @@ int findPageNumber(TPtxPdf_Document* pDoc, TPtxPdf_Page* pTargetPage)
 }
 void printOutlineItem(TPtxPdfNav_OutlineItem* pItem, const TCHAR* szIndentation, TPtxPdf_Document* pDoc)
 {
-    TCHAR  szTitle[512]      = {'\0'};
+    TCHAR  szTitle[512]       = {'\0'};
     TCHAR  szChildIndent[256] = {'\0'};
     size_t nTitleSize;
     int    iPageNumber;
@@ -182,7 +162,8 @@ void printOutlineItem(TPtxPdfNav_OutlineItem* pItem, const TCHAR* szIndentation,
 
                         for (k = 0; k < nDotsLen && k < (int)(ARRAY_SIZE(szDots) - 1); k++)
                             szDots[k] = '.';
-                        szDots[nDotsLen < (int)(ARRAY_SIZE(szDots) - 1) ? nDotsLen : (int)(ARRAY_SIZE(szDots) - 1)] = '\0';
+                        szDots[nDotsLen < (int)(ARRAY_SIZE(szDots) - 1) ? nDotsLen : (int)(ARRAY_SIZE(szDots) - 1)] =
+                            '\0';
 
                         _tprintf(_T(" %s %d"), szDots, iPageNumber);
                     }
@@ -223,12 +204,11 @@ void printOutlineItems(TPtxPdfNav_OutlineItemList* pOutlineItems, const TCHAR* s
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                          pInStream     = NULL;
-    TPtxSys_StreamDescriptor       descriptor;
-    TPtxPdf_Document*              pInDoc        = NULL;
-    TPtxPdfNav_OutlineItemList*    pOutline      = NULL;
-    TCHAR*                         szInPath;
-
+    FILE*                       pInStream = NULL;
+    TPtxSys_StreamDescriptor    descriptor;
+    TPtxPdf_Document*           pInDoc   = NULL;
+    TPtxPdfNav_OutlineItemList* pOutline = NULL;
+    TCHAR*                      szInPath;
 
     setlocale(LC_CTYPE, "");
 
@@ -243,7 +223,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -259,8 +239,7 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Get the document outline
     pOutline = PtxPdf_Document_GetOutline(pInDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutline,
-                                     _T("Failed to get document outline. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutline, _T("Failed to get document outline. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Print the outline items

@@ -29,28 +29,8 @@
 #include <math.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -128,7 +108,7 @@ int    iReturnValue = 0;
 void getFileNameWithoutExtension(const TCHAR* szPath, TCHAR* szOut, size_t nOutSize)
 {
     const TCHAR* szSlash     = _tcsrchr(szPath, _T('/'));
-    const TCHAR* szBackslash = _tcsrchr(szPath, _T('\'));
+    const TCHAR* szBackslash = _tcsrchr(szPath, _T('\\'));
     const TCHAR* szStart     = szPath;
     const TCHAR* szDot;
 
@@ -143,7 +123,8 @@ void getFileNameWithoutExtension(const TCHAR* szPath, TCHAR* szOut, size_t nOutS
     if (szDot != NULL)
     {
         size_t nLen = (size_t)(szDot - szStart);
-        if (nLen >= nOutSize) nLen = nOutSize - 1;
+        if (nLen >= nOutSize)
+            nLen = nOutSize - 1;
         _tcsncpy(szOut, szStart, nLen);
         szOut[nLen] = _T('\0');
     }
@@ -171,24 +152,24 @@ int addPageNumber(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pPage, TPtxPdfContent
     TCHAR                            szStampText[64];
 
     pContent = PtxPdf_Page_GetContent(pPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get page content. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get page content. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     pGenerator = PtxPdfContent_ContentGenerator_New(pContent, FALSE);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator, _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     pText = PtxPdfContent_Text_Create(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pText, _T("Failed to create text object. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pText, _T("Failed to create text object. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     pTextGenerator = PtxPdfContent_TextGenerator_New(pText, pFont, 8, NULL);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTextGenerator, _T("Failed to create text generator. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pPage, &size),
-                                      _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     _stprintf(szStampText, _T("Page %d"), iPageNumber);
 
@@ -198,19 +179,19 @@ int addPageNumber(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pPage, TPtxPdfContent
     position.dY = 10.0;
 
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_MoveTo(pTextGenerator, &position),
-                                      _T("Failed to move to position. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to move to position. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_Show(pTextGenerator, szStampText),
-                                      _T("Failed to show text. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to show text. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     PtxPdfContent_TextGenerator_Close(pTextGenerator);
     pTextGenerator = NULL;
 
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_PaintText(pGenerator, pText),
-                                      _T("Failed to paint text. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to paint text. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
 cleanup:
     if (pTextGenerator != NULL)
@@ -226,10 +207,10 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                            pInStream    = NULL;
+    FILE*                            pInStream = NULL;
     TPtxSys_StreamDescriptor         inDescriptor;
-    TPtxPdf_Document*                pInDoc       = NULL;
-    FILE*                            pOutStream   = NULL;
+    TPtxPdf_Document*                pInDoc     = NULL;
+    FILE*                            pOutStream = NULL;
     TPtxSys_StreamDescriptor         outDescriptor;
     TPtxPdf_Document*                pOutDoc      = NULL;
     TPtxPdf_PageList*                pInPageList  = NULL;
@@ -243,10 +224,9 @@ int _tmain(int argc, TCHAR* argv[])
     TPtxPdfContent_Text*             pTocText     = NULL;
     TPtxPdfContent_TextGenerator*    pTocTG       = NULL;
     TCHAR*                           szOutPath;
-    TDocEntry*                       pEntries     = NULL;
+    TDocEntry*                       pEntries = NULL;
     int                              nInputCount;
     int                              iPageNumber;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -261,7 +241,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -282,8 +262,8 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Create embedded font in output document
     pFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), _T(""), TRUE);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Define page copy options
     pCopyOptions = PtxPdf_PageCopyOptions_New();
@@ -296,9 +276,9 @@ int _tmain(int argc, TCHAR* argv[])
     // Copy all input documents' pages
     for (int i = 0; i < nInputCount; i++)
     {
-        TCHAR*             szInPath   = argv[i + 1];
-        TPtxPdf_Metadata*  pMetadata  = NULL;
-        TCHAR*             szTitle    = NULL;
+        TCHAR*            szInPath  = argv[i + 1];
+        TPtxPdf_Metadata* pMetadata = NULL;
+        TCHAR*            szTitle   = NULL;
 
         // Open input document
         pInStream = _tfopen(szInPath, _T("rb"));
@@ -315,8 +295,8 @@ int _tmain(int argc, TCHAR* argv[])
                                          szErrorBuff, Ptx_GetLastError());
         pEntries[i].pCopiedPages = PtxPdf_PageList_Copy(pOutDoc, pInPageList, pCopyOptions);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pEntries[i].pCopiedPages,
-                                         _T("Failed to copy pages. %s (ErrorCode: 0x%08x).\n"),
-                                         szErrorBuff, Ptx_GetLastError());
+                                         _T("Failed to copy pages. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                         Ptx_GetLastError());
 
         // Add page numbers to copied pages
         {
@@ -350,7 +330,8 @@ int _tmain(int argc, TCHAR* argv[])
         }
         if (szTitle == NULL || _tcslen(szTitle) == 0)
         {
-            if (szTitle != NULL) free(szTitle);
+            if (szTitle != NULL)
+                free(szTitle);
             TCHAR szName[256];
             getFileNameWithoutExtension(szInPath, szName, 256);
             szTitle = (TCHAR*)malloc((_tcslen(szName) + 1) * sizeof(TCHAR));
@@ -372,23 +353,22 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Create table of contents page
     {
-        TPtxGeomReal_Size firstPageSize;
-        TPtxGeomReal_Size tocSize;
-        double            dBorder         = 30.0;
-        double            dTextWidth;
-        double            dChapterSize    = 24.0;
-        double            dTitleSize      = 12.0;
+        TPtxGeomReal_Size  firstPageSize;
+        TPtxGeomReal_Size  tocSize;
+        double             dBorder = 30.0;
+        double             dTextWidth;
+        double             dChapterSize = 24.0;
+        double             dTitleSize   = 12.0;
         TPtxGeomReal_Point location;
-        int               iTocPageNumber  = 2;
+        int                iTocPageNumber = 2;
 
         // Get size of first copied page
         TPtxPdf_Page* pFirstPage = PtxPdf_PageList_Get(pEntries[0].pCopiedPages, 0);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFirstPage,
-                                         _T("Failed to get first page. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFirstPage, _T("Failed to get first page. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pFirstPage, &firstPageSize),
-                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
         Ptx_Release(pFirstPage);
 
         tocSize.dWidth  = firstPageSize.dWidth;
@@ -414,7 +394,8 @@ int _tmain(int argc, TCHAR* argv[])
                                          szErrorBuff, Ptx_GetLastError());
 
         pTocCG = PtxPdfContent_ContentGenerator_New(pTocContent, FALSE);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTocCG, _T("Failed to create TOC content generator. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTocCG,
+                                         _T("Failed to create TOC content generator. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         pTocText = PtxPdfContent_Text_Create(pOutDoc);
@@ -428,35 +409,35 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Show chapter title
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_ShowLine(pTocTG, _T("Table of Contents")),
-                                          _T("Failed to show TOC title. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to show TOC title. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Advance vertical position
         location.dY -= 1.7 * dChapterSize;
 
         // Set font size for entries
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_SetFontSize(pTocTG, dTitleSize),
-                                          _T("Failed to set font size. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to set font size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Iterate over all copied page ranges
         for (int i = 0; i < nInputCount; i++)
         {
-            TCHAR  szPageNum[32];
-            double dPageNumWidth;
-            double dTitleWidth;
-            double dDotWidth;
-            int    nDots;
-            TCHAR  szEntryLine[1024];
-            TPtxGeomReal_Point pageNumPos;
-            TPtxGeomReal_Rectangle linkRect;
-            TPtxPdf_Page*          pTargetPage = NULL;
-            TPtxGeomReal_Size      targetSize;
-            TPtxPdfNav_Destination*   pDest = NULL;
-            TPtxPdfNav_InternalLink*  pLink = NULL;
-            TPtxPdfNav_LinkList*      pLinks = NULL;
-            double                    dFontDescent;
-            double                    dFontAscent;
+            TCHAR                    szPageNum[32];
+            double                   dPageNumWidth;
+            double                   dTitleWidth;
+            double                   dDotWidth;
+            int                      nDots;
+            TCHAR                    szEntryLine[1024];
+            TPtxGeomReal_Point       pageNumPos;
+            TPtxGeomReal_Rectangle   linkRect;
+            TPtxPdf_Page*            pTargetPage = NULL;
+            TPtxGeomReal_Size        targetSize;
+            TPtxPdfNav_Destination*  pDest  = NULL;
+            TPtxPdfNav_InternalLink* pLink  = NULL;
+            TPtxPdfNav_LinkList*     pLinks = NULL;
+            double                   dFontDescent;
+            double                   dFontAscent;
 
             _stprintf(szPageNum, _T("%d"), iTocPageNumber);
 
@@ -464,7 +445,8 @@ int _tmain(int argc, TCHAR* argv[])
             dTitleWidth   = PtxPdfContent_TextGenerator_GetWidth(pTocTG, pEntries[i].szTitle);
             dDotWidth     = PtxPdfContent_TextGenerator_GetWidth(pTocTG, _T("."));
             nDots         = (int)floor((dTextWidth - dTitleWidth - dPageNumWidth) / dDotWidth);
-            if (nDots < 0) nDots = 0;
+            if (nDots < 0)
+                nDots = 0;
 
             // Build entry line: title + dots
             _tcscpy(szEntryLine, pEntries[i].szTitle);
@@ -473,11 +455,11 @@ int _tmain(int argc, TCHAR* argv[])
 
             // Move to current location and show entry
             GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_MoveTo(pTocTG, &location),
-                                              _T("Failed to move to position. %s (ErrorCode: 0x%08x).\n"),
-                                              szErrorBuff, Ptx_GetLastError());
+                                              _T("Failed to move to position. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                              Ptx_GetLastError());
             GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_Show(pTocTG, szEntryLine),
-                                              _T("Failed to show entry. %s (ErrorCode: 0x%08x).\n"),
-                                              szErrorBuff, Ptx_GetLastError());
+                                              _T("Failed to show entry. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                              Ptx_GetLastError());
 
             // Show page number
             pageNumPos.dX = tocSize.dWidth - dBorder - dPageNumWidth;
@@ -486,8 +468,8 @@ int _tmain(int argc, TCHAR* argv[])
                                               _T("Failed to move to page number position. %s (ErrorCode: 0x%08x).\n"),
                                               szErrorBuff, Ptx_GetLastError());
             GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_Show(pTocTG, szPageNum),
-                                              _T("Failed to show page number. %s (ErrorCode: 0x%08x).\n"),
-                                              szErrorBuff, Ptx_GetLastError());
+                                              _T("Failed to show page number. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                              Ptx_GetLastError());
 
             // Create link rectangle
             dFontDescent = PtxPdfContent_Font_GetDescent(pTocFont);
@@ -506,8 +488,8 @@ int _tmain(int argc, TCHAR* argv[])
                 {
                     double dLeft = 0;
                     double dTop  = targetSize.dHeight;
-                    pDest = (TPtxPdfNav_Destination*)PtxPdfNav_LocationZoomDestination_Create(
-                        pOutDoc, pTargetPage, &dLeft, &dTop, NULL);
+                    pDest = (TPtxPdfNav_Destination*)PtxPdfNav_LocationZoomDestination_Create(pOutDoc, pTargetPage,
+                                                                                              &dLeft, &dTop, NULL);
                 }
                 if (pDest != NULL)
                 {
@@ -538,8 +520,8 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Paint the generated text
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_PaintText(pTocCG, pTocText),
-                                          _T("Failed to paint TOC text. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to paint TOC text. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         PtxPdfContent_ContentGenerator_Close(pTocCG);
         pTocCG = NULL;
@@ -551,21 +533,20 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Add pages to output document
     pOutPageList = PtxPdf_Document_GetPages(pOutDoc);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageList,
-                                     _T("Failed to get output pages. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPageList, _T("Failed to get output pages. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Add TOC page first
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_PageList_Add(pOutPageList, pTocPage),
-                                      _T("Failed to add TOC page. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to add TOC page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     // Add all copied pages
     for (int i = 0; i < nInputCount; i++)
     {
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_PageList_AddRange(pOutPageList, pEntries[i].pCopiedPages),
-                                          _T("Failed to add pages. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to add pages. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
     }
 
     _tprintf(_T("Execution successful.\n"));

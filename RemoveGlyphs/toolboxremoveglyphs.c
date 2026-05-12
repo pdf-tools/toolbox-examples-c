@@ -27,28 +27,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -153,29 +133,27 @@ int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
     return TRUE;
 }
 int copyContentAndRemoveGlyphs(TPtxPdfContent_Content* pInContent, TPtxPdfContent_Content* pOutContent,
-                                TPtxPdf_Document* pOutDoc)
+                               TPtxPdf_Document* pOutDoc)
 {
-    TPtxPdfContent_ContentExtractor*         pExtractor      = NULL;
-    TPtxPdfContent_ContentGenerator*         pGenerator      = NULL;
-    TPtxPdfContent_ContentExtractorIterator* pIterator       = NULL;
-    TPtxPdfContent_ContentElement*           pInElement      = NULL;
-    TPtxPdfContent_ContentElement*           pOutElement     = NULL;
-    TPtxPdfContent_GroupElement*             pOutGroupElem   = NULL;
-    TPtxPdfContent_Group*                    pInGroup        = NULL;
-    TPtxPdfContent_Group*                    pOutGroup       = NULL;
-    TPtxPdfContent_Content*                  pInGroupContent = NULL;
+    TPtxPdfContent_ContentExtractor*         pExtractor       = NULL;
+    TPtxPdfContent_ContentGenerator*         pGenerator       = NULL;
+    TPtxPdfContent_ContentExtractorIterator* pIterator        = NULL;
+    TPtxPdfContent_ContentElement*           pInElement       = NULL;
+    TPtxPdfContent_ContentElement*           pOutElement      = NULL;
+    TPtxPdfContent_GroupElement*             pOutGroupElem    = NULL;
+    TPtxPdfContent_Group*                    pInGroup         = NULL;
+    TPtxPdfContent_Group*                    pOutGroup        = NULL;
+    TPtxPdfContent_Content*                  pInGroupContent  = NULL;
     TPtxPdfContent_Content*                  pOutGroupContent = NULL;
 
     // Create content extractor for the input content
     pExtractor = PtxPdfContent_ContentExtractor_New(pInContent);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pExtractor,
-                                     _T("Failed to create content extractor. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pExtractor, _T("Failed to create content extractor. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Create content generator for the output content
     pGenerator = PtxPdfContent_ContentGenerator_New(pOutContent, FALSE);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator,
-                                     _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator, _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Get iterator
@@ -192,16 +170,15 @@ int copyContentAndRemoveGlyphs(TPtxPdfContent_Content* pInContent, TPtxPdfConten
         {
             // Special treatment for group elements
             // Create empty output group element
-            pOutGroupElem = PtxPdfContent_GroupElement_CopyWithoutContent(
-                pOutDoc, (TPtxPdfContent_GroupElement*)pInElement);
+            pOutGroupElem =
+                PtxPdfContent_GroupElement_CopyWithoutContent(pOutDoc, (TPtxPdfContent_GroupElement*)pInElement);
             GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroupElem,
-                                             _T("Failed to copy group element. %s (ErrorCode: 0x%08x).\n"),
-                                             szErrorBuff, Ptx_GetLastError());
+                                             _T("Failed to copy group element. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                             Ptx_GetLastError());
 
             // Get input group content
             pInGroup = PtxPdfContent_GroupElement_GetGroup((TPtxPdfContent_GroupElement*)pInElement);
-            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInGroup,
-                                             _T("Failed to get input group. %s (ErrorCode: 0x%08x).\n"),
+            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInGroup, _T("Failed to get input group. %s (ErrorCode: 0x%08x).\n"),
                                              szErrorBuff, Ptx_GetLastError());
             pInGroupContent = PtxPdfContent_Group_GetContent(pInGroup);
             GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInGroupContent,
@@ -210,8 +187,7 @@ int copyContentAndRemoveGlyphs(TPtxPdfContent_Content* pInContent, TPtxPdfConten
 
             // Get output group content
             pOutGroup = PtxPdfContent_GroupElement_GetGroup(pOutGroupElem);
-            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroup,
-                                             _T("Failed to get output group. %s (ErrorCode: 0x%08x).\n"),
+            GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroup, _T("Failed to get output group. %s (ErrorCode: 0x%08x).\n"),
                                              szErrorBuff, Ptx_GetLastError());
             pOutGroupContent = PtxPdfContent_Group_GetContent(pOutGroup);
             GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutGroupContent,
@@ -223,10 +199,10 @@ int copyContentAndRemoveGlyphs(TPtxPdfContent_Content* pInContent, TPtxPdfConten
                 goto cleanup;
 
             // Append the group element
-            GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-                PtxPdfContent_ContentGenerator_AppendContentElement(pGenerator,
-                                                                     (TPtxPdfContent_ContentElement*)pOutGroupElem),
-                _T("Failed to append group element. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
+            GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_AppendContentElement(
+                                                  pGenerator, (TPtxPdfContent_ContentElement*)pOutGroupElem),
+                                              _T("Failed to append group element. %s (ErrorCode: 0x%08x).\n"),
+                                              szErrorBuff, Ptx_GetLastError());
 
             Ptx_Release(pInGroup);
             pInGroup = NULL;
@@ -315,10 +291,10 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                    pInStream    = NULL;
+    FILE*                    pInStream = NULL;
     TPtxSys_StreamDescriptor inDescriptor;
-    TPtxPdf_Document*        pInDoc       = NULL;
-    FILE*                    pOutStream   = NULL;
+    TPtxPdf_Document*        pInDoc     = NULL;
+    FILE*                    pOutStream = NULL;
     TPtxSys_StreamDescriptor outDescriptor;
     TPtxPdf_Document*        pOutDoc      = NULL;
     TPtxPdf_PageList*        pInPageList  = NULL;
@@ -330,7 +306,6 @@ int _tmain(int argc, TCHAR* argv[])
     TPtxPdf_Conformance      iConformance;
     TCHAR*                   szInPath;
     TCHAR*                   szOutPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -345,7 +320,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -391,13 +366,13 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Get input page
         pInPage = PtxPdf_PageList_Get(pInPageList, iPage);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"),
-                                         iPage + 1, szErrorBuff, Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInPage, _T("Failed to get page %d. %s (ErrorCode: 0x%08x).\n"), iPage + 1,
+                                         szErrorBuff, Ptx_GetLastError());
 
         // Get page size
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pInPage, &pageSize),
-                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Create empty output page with same size
         pOutPage = PtxPdf_Page_Create(pOutDoc, &pageSize);
@@ -406,8 +381,7 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Get input and output content
         pInContent = PtxPdf_Page_GetContent(pInPage);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInContent,
-                                         _T("Failed to get input page content. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInContent, _T("Failed to get input page content. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
         pOutContent = PtxPdf_Page_GetContent(pOutPage);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutContent,

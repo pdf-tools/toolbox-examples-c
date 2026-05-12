@@ -34,28 +34,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -167,34 +147,33 @@ int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                            pInStream    = NULL;
-    TPtxSys_StreamDescriptor         inDescriptor;
-    TPtxPdf_Document*                pInDoc       = NULL;
-    FILE*                            pOutStream   = NULL;
-    TPtxSys_StreamDescriptor         outDescriptor;
-    TPtxPdf_Document*                pOutDoc      = NULL;
-    TPtxPdf_PageList*                pInPageList  = NULL;
-    TPtxPdf_PageList*                pOutPageList = NULL;
-    TPtxPdf_Page*                    pInPage      = NULL;
-    TPtxPdf_Page*                    pOutPage     = NULL;
-    TPtxPdf_PageCopyOptions*         pCopyOptions = NULL;
-    TPtxPdf_Conformance              iConformance;
-    TPtxPdfContent_Transparency*     pTransparency = NULL;
-    TPtxPdfContent_ColorSpace*       pColorSpace   = NULL;
-    TPtxPdfContent_Paint*            pPaint        = NULL;
-    TPtxPdfContent_Fill*             pFill         = NULL;
-    TPtxPdfContent_Path*             pPath         = NULL;
-    TPtxPdfContent_PathGenerator*    pPathGen      = NULL;
-    TPtxPdfContent_Content*          pContent      = NULL;
-    TPtxPdfContent_ContentGenerator* pGenerator    = NULL;
-    TCHAR*                           szInPath;
-    TCHAR*                           szOutPath;
-    TPtxPdfContent_ProcessColorSpaceType eColorType = ePtxPdfContent_ProcessColorSpaceType_Gray;
-    double                           color[4]     = {0.9, 0.0, 0.0, 0.0};
-    size_t                           nColor       = 1;
-    double                           dColorAlpha  = 1.0;
-    int                              iArgIdx;
-
+    FILE*                                pInStream = NULL;
+    TPtxSys_StreamDescriptor             inDescriptor;
+    TPtxPdf_Document*                    pInDoc     = NULL;
+    FILE*                                pOutStream = NULL;
+    TPtxSys_StreamDescriptor             outDescriptor;
+    TPtxPdf_Document*                    pOutDoc      = NULL;
+    TPtxPdf_PageList*                    pInPageList  = NULL;
+    TPtxPdf_PageList*                    pOutPageList = NULL;
+    TPtxPdf_Page*                        pInPage      = NULL;
+    TPtxPdf_Page*                        pOutPage     = NULL;
+    TPtxPdf_PageCopyOptions*             pCopyOptions = NULL;
+    TPtxPdf_Conformance                  iConformance;
+    TPtxPdfContent_Transparency*         pTransparency = NULL;
+    TPtxPdfContent_ColorSpace*           pColorSpace   = NULL;
+    TPtxPdfContent_Paint*                pPaint        = NULL;
+    TPtxPdfContent_Fill*                 pFill         = NULL;
+    TPtxPdfContent_Path*                 pPath         = NULL;
+    TPtxPdfContent_PathGenerator*        pPathGen      = NULL;
+    TPtxPdfContent_Content*              pContent      = NULL;
+    TPtxPdfContent_ContentGenerator*     pGenerator    = NULL;
+    TCHAR*                               szInPath;
+    TCHAR*                               szOutPath;
+    TPtxPdfContent_ProcessColorSpaceType eColorType  = ePtxPdfContent_ProcessColorSpaceType_Gray;
+    double                               color[4]    = {0.9, 0.0, 0.0, 0.0};
+    size_t                               nColor      = 1;
+    double                               dColorAlpha = 1.0;
+    int                                  iArgIdx;
 
     setlocale(LC_CTYPE, "");
 
@@ -209,7 +188,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -301,13 +280,13 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Create a transparent paint for the given color
     pPaint = PtxPdfContent_Paint_Create(pOutDoc, pColorSpace, color, nColor, pTransparency);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPaint, _T("Failed to create paint. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPaint, _T("Failed to create paint. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Create fill
     pFill = PtxPdfContent_Fill_New(pPaint);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFill, _T("Failed to create fill. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFill, _T("Failed to create fill. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Configure copy options
     pCopyOptions = PtxPdf_PageCopyOptions_New();
@@ -325,7 +304,7 @@ int _tmain(int argc, TCHAR* argv[])
     // Loop through all pages
     for (int i = 0; i < PtxPdf_PageList_GetCount(pInPageList); i++)
     {
-        TPtxGeomReal_Size     pageSize;
+        TPtxGeomReal_Size      pageSize;
         TPtxGeomReal_Rectangle pathRect;
 
         pInPage = PtxPdf_PageList_Get(pInPageList, i);
@@ -334,26 +313,27 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Copy page from input to output
         pOutPage = PtxPdf_Page_Copy(pOutDoc, pInPage, pCopyOptions);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPage, _T("Failed to copy page. %s (ErrorCode: 0x%08x).\n"),
-                                         szErrorBuff, Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPage, _T("Failed to copy page. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                         Ptx_GetLastError());
 
         // Get page size
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pInPage, &pageSize),
-                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Create content generator
         pContent = PtxPdf_Page_GetContent(pOutPage);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pContent, _T("Failed to get page content. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
         pGenerator = PtxPdfContent_ContentGenerator_New(pContent, FALSE);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator, _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pGenerator,
+                                         _T("Failed to create content generator. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         // Create a rectangular path the same size as the page
         pPath = PtxPdfContent_Path_New();
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPath, _T("Failed to create path. %s (ErrorCode: 0x%08x).\n"),
-                                         szErrorBuff, Ptx_GetLastError());
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPath, _T("Failed to create path. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                         Ptx_GetLastError());
         pPathGen = PtxPdfContent_PathGenerator_New(pPath);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pPathGen, _T("Failed to create path generator. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
@@ -364,8 +344,8 @@ int _tmain(int argc, TCHAR* argv[])
         pathRect.dTop    = pageSize.dHeight;
 
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_PathGenerator_AddRectangle(pPathGen, &pathRect),
-                                          _T("Failed to add rectangle to path. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to add rectangle to path. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Close path generator
         PtxPdfContent_PathGenerator_Close(pPathGen);
@@ -373,8 +353,8 @@ int _tmain(int argc, TCHAR* argv[])
 
         // Paint the path with the transparent paint
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_PaintPath(pGenerator, pPath, pFill, NULL),
-                                          _T("Failed to paint path. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to paint path. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
 
         // Close content generator
         PtxPdfContent_ContentGenerator_Close(pGenerator);

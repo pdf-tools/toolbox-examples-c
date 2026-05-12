@@ -27,28 +27,8 @@
 #include <string.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -154,25 +134,24 @@ int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                            pInStream    = NULL;
-    TPtxSys_StreamDescriptor         descriptor;
-    TPtxPdf_Document*                pInDoc       = NULL;
-    FILE*                            pOutStream   = NULL;
-    TPtxSys_StreamDescriptor         outDescriptor;
-    TPtxPdf_Document*                pOutDoc      = NULL;
-    TPtxPdf_PageList*                pInPageList  = NULL;
-    TPtxPdf_PageList*                pOutPageList = NULL;
-    TPtxPdf_PageList*                pCopiedPages = NULL;
-    TPtxPdf_PageCopyOptions*         pCopyOptions = NULL;
-    TPtxPdf_Page*                    pOutPage     = NULL;
-    TPtxPdfNav_LocationZoomDestination* pDest     = NULL;
-    TPtxPdf_Conformance              iConformance;
-    TPtxGeomReal_Size                pageSize;
-    TCHAR*                           szInPath;
-    TCHAR*                           szOutPath;
-    int                              iDestPageNumber;
-    int                              iPageCount;
-
+    FILE*                               pInStream = NULL;
+    TPtxSys_StreamDescriptor            descriptor;
+    TPtxPdf_Document*                   pInDoc     = NULL;
+    FILE*                               pOutStream = NULL;
+    TPtxSys_StreamDescriptor            outDescriptor;
+    TPtxPdf_Document*                   pOutDoc      = NULL;
+    TPtxPdf_PageList*                   pInPageList  = NULL;
+    TPtxPdf_PageList*                   pOutPageList = NULL;
+    TPtxPdf_PageList*                   pCopiedPages = NULL;
+    TPtxPdf_PageCopyOptions*            pCopyOptions = NULL;
+    TPtxPdf_Page*                       pOutPage     = NULL;
+    TPtxPdfNav_LocationZoomDestination* pDest        = NULL;
+    TPtxPdf_Conformance                 iConformance;
+    TPtxGeomReal_Size                   pageSize;
+    TCHAR*                              szInPath;
+    TCHAR*                              szOutPath;
+    int                                 iDestPageNumber;
+    int                                 iPageCount;
 
     setlocale(LC_CTYPE, "");
 
@@ -187,7 +166,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -249,8 +228,7 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Add open destination
     pOutPage = PtxPdf_PageList_Get(pCopiedPages, iDestPageNumber - 1);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPage,
-                                     _T("Failed to get destination page. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pOutPage, _T("Failed to get destination page. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Get page size to set the top coordinate
@@ -262,15 +240,14 @@ int _tmain(int argc, TCHAR* argv[])
     {
         double dLeft = 0.0;
         double dTop  = pageSize.dHeight;
-        pDest = PtxPdfNav_LocationZoomDestination_Create(pOutDoc, pOutPage, &dLeft, &dTop, NULL);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pDest,
-                                         _T("Failed to create destination. %s (ErrorCode: 0x%08x).\n"),
+        pDest        = PtxPdfNav_LocationZoomDestination_Create(pOutDoc, pOutPage, &dLeft, &dTop, NULL);
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pDest, _T("Failed to create destination. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
     }
 
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
-        PtxPdf_Document_SetOpenDestination(pOutDoc, (TPtxPdfNav_Destination*)pDest),
-        _T("Failed to set open destination. %s (ErrorCode: 0x%08x).\n"), szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Document_SetOpenDestination(pOutDoc, (TPtxPdfNav_Destination*)pDest),
+                                      _T("Failed to set open destination. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
 
     _tprintf(_T("Execution successful.\n"));
 

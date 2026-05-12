@@ -29,28 +29,8 @@
 #include <math.h>
 #include "PdfTools_Toolbox.h"
 
-
 #include <locale.h>
-#if !defined(WIN32)
-#define TCHAR char
-#define _tcslen strlen
-#define _tcscat strcat
-#define _tcscpy strcpy
-#define _tcsrchr strrchr
-#define _tcstok strtok
-#define _tcslen strlen
-#define _tcscmp strcmp
-#define _tcsftime strftime
-#define _tcsncpy strncpy
-#define _tmain main
-#define _tfopen fopen
-#define _ftprintf fprintf
-#define _stprintf sprintf
-#define _tstof atof
-#define _tremove remove
-#define _tprintf printf
-#define _T(str) str
-#endif
+#include "compat.h"
 
 
 #define MIN(a, b)     (((a) < (b) ? (a) : (b)))
@@ -122,8 +102,8 @@ size_t nBufSize;
 TCHAR  szErrorBuff[1024];
 int    iReturnValue = 0;
 
-static double dDistance   = 10.0;
-static double dFontSize  = 8.0;
+static double       dDistance   = 10.0;
+static double       dFontSize   = 8.0;
 static unsigned int iLineNumber = 0;
 
 // Maximum number of unique Y positions (lines) per page
@@ -177,45 +157,42 @@ int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 // Comparison function for sorting doubles in descending order (top to bottom on page)
 int compareDoubleDesc(const void* a, const void* b)
 {
-    double da = *(const double*)a;
-    double db = *(const double*)b;
+    double da   = *(const double*)a;
+    double db   = *(const double*)b;
     double diff = db - da;
     if (fabs(diff) < dFontSize)
         return 0;
     return (diff > 0) ? 1 : -1;
 }
-int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont,
-                   TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage)
+int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont, TPtxPdf_Page* pInPage, TPtxPdf_Page* pOutPage)
 {
-    TPtxPdfContent_ContentExtractor*         pExtractor       = NULL;
-    TPtxPdfContent_ContentExtractorIterator* pIterator        = NULL;
-    TPtxPdfContent_ContentElement*           pElement         = NULL;
-    TPtxPdfContent_Content*                  pInContent       = NULL;
-    TPtxPdfContent_Content*                  pOutContent      = NULL;
-    TPtxPdfContent_ContentGenerator*         pContentGen      = NULL;
-    TPtxPdfContent_Text*                     pText            = NULL;
-    TPtxPdfContent_TextGenerator*            pTextGen         = NULL;
+    TPtxPdfContent_ContentExtractor*         pExtractor  = NULL;
+    TPtxPdfContent_ContentExtractorIterator* pIterator   = NULL;
+    TPtxPdfContent_ContentElement*           pElement    = NULL;
+    TPtxPdfContent_Content*                  pInContent  = NULL;
+    TPtxPdfContent_Content*                  pOutContent = NULL;
+    TPtxPdfContent_ContentGenerator*         pContentGen = NULL;
+    TPtxPdfContent_Text*                     pText       = NULL;
+    TPtxPdfContent_TextGenerator*            pTextGen    = NULL;
     double                                   lineYPositions[MAX_LINE_POSITIONS];
-    int                                      nLineCount       = 0;
+    int                                      nLineCount = 0;
     double                                   dLeftX;
     TPtxGeomReal_Size                        pageSize;
 
     // Get page size
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdf_Page_GetSize(pInPage, &pageSize),
-                                      _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"),
-                                      szErrorBuff, Ptx_GetLastError());
+                                      _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                      Ptx_GetLastError());
     dLeftX = pageSize.dWidth;
 
     // Get input page content
     pInContent = PtxPdf_Page_GetContent(pInPage);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInContent,
-                                     _T("Failed to get input page content. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pInContent, _T("Failed to get input page content. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Create content extractor with ungrouping
     pExtractor = PtxPdfContent_ContentExtractor_New(pInContent);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pExtractor,
-                                     _T("Failed to create content extractor. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pExtractor, _T("Failed to create content extractor. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
     GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(
         PtxPdfContent_ContentExtractor_SetUngrouping(pExtractor, ePtxPdfContent_UngroupingSelection_All),
@@ -233,8 +210,7 @@ int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont,
 
         if (iType == ePtxPdfContent_ContentElementType_TextElement)
         {
-            TPtxPdfContent_Text* pElemText =
-                PtxPdfContent_TextElement_GetText((TPtxPdfContent_TextElement*)pElement);
+            TPtxPdfContent_Text* pElemText = PtxPdfContent_TextElement_GetText((TPtxPdfContent_TextElement*)pElement);
             if (pElemText != NULL)
             {
                 int nFragCount = PtxPdfContent_Text_GetCount(pElemText);
@@ -295,7 +271,7 @@ int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont,
 
         // Remove duplicates that are within font size tolerance after sorting
         double sortedUnique[MAX_LINE_POSITIONS];
-        int nUniqueCount = 0;
+        int    nUniqueCount = 0;
         for (int i = 0; i < nLineCount; i++)
         {
             if (nUniqueCount == 0 || fabs(sortedUnique[nUniqueCount - 1] - lineYPositions[i]) >= dFontSize)
@@ -313,14 +289,12 @@ int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont,
 
         // Create text object
         pText = PtxPdfContent_Text_Create(pOutDoc);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pText,
-                                         _T("Failed to create text object. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pText, _T("Failed to create text object. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         // Create text generator
         pTextGen = PtxPdfContent_TextGenerator_New(pText, pFont, dFontSize, NULL);
-        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTextGen,
-                                         _T("Failed to create text generator. %s (ErrorCode: 0x%08x).\n"),
+        GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTextGen, _T("Failed to create text generator. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
         // Iterate over all vertical positions
@@ -339,13 +313,13 @@ int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont,
             position.dY = sortedUnique[i];
 
             GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_MoveTo(pTextGen, &position),
-                                              _T("Failed to move to position. %s (ErrorCode: 0x%08x).\n"),
-                                              szErrorBuff, Ptx_GetLastError());
+                                              _T("Failed to move to position. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                              Ptx_GetLastError());
 
             // Show the line number string
             GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_TextGenerator_Show(pTextGen, szLineNum),
-                                              _T("Failed to show line number. %s (ErrorCode: 0x%08x).\n"),
-                                              szErrorBuff, Ptx_GetLastError());
+                                              _T("Failed to show line number. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                              Ptx_GetLastError());
         }
 
         // Close text generator
@@ -359,8 +333,8 @@ int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont,
                                          szErrorBuff, Ptx_GetLastError());
 
         GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(PtxPdfContent_ContentGenerator_PaintText(pContentGen, pText),
-                                          _T("Failed to paint text. %s (ErrorCode: 0x%08x).\n"),
-                                          szErrorBuff, Ptx_GetLastError());
+                                          _T("Failed to paint text. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                          Ptx_GetLastError());
     }
 
 cleanup:
@@ -385,23 +359,22 @@ cleanup:
 }
 int _tmain(int argc, TCHAR* argv[])
 {
-    FILE*                    pInStream     = NULL;
+    FILE*                    pInStream = NULL;
     TPtxSys_StreamDescriptor inDescriptor;
-    TPtxPdf_Document*        pInDoc        = NULL;
-    FILE*                    pOutStream    = NULL;
+    TPtxPdf_Document*        pInDoc     = NULL;
+    FILE*                    pOutStream = NULL;
     TPtxSys_StreamDescriptor outDescriptor;
-    TPtxPdf_Document*        pOutDoc       = NULL;
-    TPtxPdfContent_Font*     pFont         = NULL;
-    TPtxPdf_PageList*        pInPageList   = NULL;
-    TPtxPdf_PageList*        pOutPageList  = NULL;
-    TPtxPdf_PageList*        pCopiedPages  = NULL;
-    TPtxPdf_Page*            pInPage       = NULL;
-    TPtxPdf_Page*            pOutPage      = NULL;
-    TPtxPdf_PageCopyOptions* pCopyOptions  = NULL;
+    TPtxPdf_Document*        pOutDoc      = NULL;
+    TPtxPdfContent_Font*     pFont        = NULL;
+    TPtxPdf_PageList*        pInPageList  = NULL;
+    TPtxPdf_PageList*        pOutPageList = NULL;
+    TPtxPdf_PageList*        pCopiedPages = NULL;
+    TPtxPdf_Page*            pInPage      = NULL;
+    TPtxPdf_Page*            pOutPage     = NULL;
+    TPtxPdf_PageCopyOptions* pCopyOptions = NULL;
     TPtxPdf_Conformance      iConformance;
     TCHAR*                   szInPath;
     TCHAR*                   szOutPath;
-
 
     setlocale(LC_CTYPE, "");
 
@@ -416,7 +389,7 @@ int _tmain(int argc, TCHAR* argv[])
     Ptx_Initialize();
 
     // Set and check license key
-    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("insert-license-key-here"), NULL),
+    GOTO_CLEANUP_IF_FALSE_PRINT_ERROR(Ptx_Sdk_Initialize(_T("<-- insert license key -->"), NULL),
                                       _T("Failed to set license key. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
@@ -447,13 +420,12 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Create a font for the line numbers
     pFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), NULL, TRUE);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Define page copy options
     pCopyOptions = PtxPdf_PageCopyOptions_New();
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pCopyOptions,
-                                     _T("Failed to create page copy options. %s (ErrorCode: 0x%08x).\n"),
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pCopyOptions, _T("Failed to create page copy options. %s (ErrorCode: 0x%08x).\n"),
                                      szErrorBuff, Ptx_GetLastError());
 
     // Get input page list
@@ -464,9 +436,8 @@ int _tmain(int argc, TCHAR* argv[])
 
     // Copy all pages from input to output document
     pCopiedPages = PtxPdf_PageList_Copy(pOutDoc, pInPageList, pCopyOptions);
-    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pCopiedPages,
-                                     _T("Failed to copy pages. %s (ErrorCode: 0x%08x).\n"),
-                                     szErrorBuff, Ptx_GetLastError());
+    GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pCopiedPages, _T("Failed to copy pages. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
+                                     Ptx_GetLastError());
 
     // Iterate over all input-output page pairs and add line numbers
     int nPageCount = PtxPdf_PageList_GetCount(pInPageList);
