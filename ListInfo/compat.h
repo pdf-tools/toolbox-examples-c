@@ -15,9 +15,6 @@
 
 #if !defined(WIN32) && !defined(_WIN32)
 #include <strings.h>          // POSIX: strcasecmp
-typedef int BOOL;
-#define TRUE 1
-#define FALSE 0
 #define TCHAR char
 #define _tcslen strlen
 #define _tcscat strcat

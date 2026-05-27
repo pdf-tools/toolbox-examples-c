@@ -99,6 +99,20 @@ TCHAR             szErrorBuff[1024];
 double            dBorder      = 20.0;
 int               iReturnValue = 0;
 
+/* Try creating a font from a list of fallback names (Linux systems may not have Arial) */
+TPtxPdfContent_Font* createFontWithFallbacks(TPtxPdf_Document* pDoc, const TCHAR* szStyle, BOOL bEmbed)
+{
+    const TCHAR*         fontNames[] = {_T("Arial"), _T("Liberation Sans"), _T("DejaVu Sans"), _T("Helvetica"),
+                                        _T("sans-serif")};
+    TPtxPdfContent_Font* pFont       = NULL;
+    for (size_t i = 0; i < sizeof(fontNames) / sizeof(fontNames[0]); i++)
+    {
+        pFont = PtxPdfContent_Font_CreateFromSystem(pDoc, fontNames[i], szStyle, bEmbed);
+        if (pFont != NULL)
+            return pFont;
+    }
+    return NULL;
+}
 int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 {
     TPtxPdf_FileReferenceList* pInFileRefList;
@@ -169,8 +183,8 @@ int addPageNumber(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pOutPage, TPtxPdfCont
                                      szErrorBuff, Ptx_GetLastError());
 
     // Generate string to be stamped as page number
-    char szStampBuffer[50];
-    snprintf(szStampBuffer, sizeof(szStampBuffer), _T("Page %d"), nPageNumber);
+    TCHAR szStampBuffer[50];
+    _sntprintf(szStampBuffer, ARRAY_SIZE(szStampBuffer), _T("Page %d"), nPageNumber);
     TCHAR* szStampText = szStampBuffer;
 
     double dTextWidth = PtxPdfContent_TextGenerator_GetWidth(pTextGenerator, szStampText);
@@ -270,7 +284,7 @@ int _tmain(int argc, TCHAR* argv[])
                                      szOutPath, szErrorBuff, Ptx_GetLastError());
 
     // Create embedded font in output document
-    pFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), _T(""), TRUE);
+    pFont = createFontWithFallbacks(pOutDoc, _T(""), TRUE);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                      Ptx_GetLastError());
 

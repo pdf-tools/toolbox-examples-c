@@ -102,6 +102,20 @@ size_t nBufSize;
 TCHAR  szErrorBuff[1024];
 int    iReturnValue = 0;
 
+/* Try creating a font from a list of fallback names (Linux systems may not have Arial) */
+TPtxPdfContent_Font* createFontWithFallbacks(TPtxPdf_Document* pDoc, const TCHAR* szStyle, BOOL bEmbed)
+{
+    const TCHAR*         fontNames[] = {_T("Arial"), _T("Liberation Sans"), _T("DejaVu Sans"), _T("Helvetica"),
+                                        _T("sans-serif")};
+    TPtxPdfContent_Font* pFont       = NULL;
+    for (size_t i = 0; i < sizeof(fontNames) / sizeof(fontNames[0]); i++)
+    {
+        pFont = PtxPdfContent_Font_CreateFromSystem(pDoc, fontNames[i], szStyle, bEmbed);
+        if (pFont != NULL)
+            return pFont;
+    }
+    return NULL;
+}
 /**
  * Get the file name without extension from a path string.
  */
@@ -137,7 +151,7 @@ void getFileNameWithoutExtension(const TCHAR* szPath, TCHAR* szOut, size_t nOutS
 /* Structure to hold per-input-document data */
 typedef struct
 {
-    TCHAR             szTitle[256];
+    TCHAR             szTitle[PATH_MAX];
     TPtxPdf_PageList* pCopiedPages;
 } TDocEntry;
 int addPageNumber(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pPage, TPtxPdfContent_Font* pFont, int iPageNumber)
@@ -171,7 +185,7 @@ int addPageNumber(TPtxPdf_Document* pOutDoc, TPtxPdf_Page* pPage, TPtxPdfContent
                                       _T("Failed to get page size. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                       Ptx_GetLastError());
 
-    _stprintf(szStampText, _T("Page %d"), iPageNumber);
+    _sntprintf(szStampText, ARRAY_SIZE(szStampText), _T("Page %d"), iPageNumber);
 
     dTextWidth = PtxPdfContent_TextGenerator_GetWidth(pTextGenerator, szStampText);
 
@@ -261,7 +275,7 @@ int _tmain(int argc, TCHAR* argv[])
                                      szOutPath, szErrorBuff, Ptx_GetLastError());
 
     // Create embedded font in output document
-    pFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), _T(""), TRUE);
+    pFont = createFontWithFallbacks(pOutDoc, _T(""), TRUE);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                      Ptx_GetLastError());
 
@@ -332,8 +346,8 @@ int _tmain(int argc, TCHAR* argv[])
         {
             if (szTitle != NULL)
                 free(szTitle);
-            TCHAR szName[256];
-            getFileNameWithoutExtension(szInPath, szName, 256);
+            TCHAR szName[PATH_MAX];
+            getFileNameWithoutExtension(szInPath, szName, ARRAY_SIZE(szName));
             szTitle = (TCHAR*)malloc((_tcslen(szName) + 1) * sizeof(TCHAR));
             if (szTitle != NULL)
                 _tcscpy(szTitle, szName);
@@ -380,7 +394,7 @@ int _tmain(int argc, TCHAR* argv[])
                                          szErrorBuff, Ptx_GetLastError());
 
         // Create font for TOC
-        pTocFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), NULL, TRUE);
+        pTocFont = createFontWithFallbacks(pOutDoc, NULL, TRUE);
         GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pTocFont, _T("Failed to create TOC font. %s (ErrorCode: 0x%08x).\n"),
                                          szErrorBuff, Ptx_GetLastError());
 
@@ -439,7 +453,7 @@ int _tmain(int argc, TCHAR* argv[])
             double                   dFontDescent;
             double                   dFontAscent;
 
-            _stprintf(szPageNum, _T("%d"), iTocPageNumber);
+            _sntprintf(szPageNum, ARRAY_SIZE(szPageNum), _T("%d"), iTocPageNumber);
 
             dPageNumWidth = PtxPdfContent_TextGenerator_GetWidth(pTocTG, szPageNum);
             dTitleWidth   = PtxPdfContent_TextGenerator_GetWidth(pTocTG, pEntries[i].szTitle);

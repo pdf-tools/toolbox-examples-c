@@ -119,6 +119,20 @@ TCHAR             szErrorBuff[1024];
 size_t            nBufSize;
 int               iReturnValue = 0;
 
+/* Try creating a font from a list of fallback names (Linux systems may not have Arial) */
+TPtxPdfContent_Font* createFontWithFallbacks(TPtxPdf_Document* pDoc, const TCHAR* szStyle, BOOL bEmbed)
+{
+    const TCHAR*         fontNames[] = {_T("Arial"), _T("Liberation Sans"), _T("DejaVu Sans"), _T("Helvetica"),
+                                        _T("sans-serif")};
+    TPtxPdfContent_Font* pFont       = NULL;
+    for (size_t i = 0; i < sizeof(fontNames) / sizeof(fontNames[0]); i++)
+    {
+        pFont = PtxPdfContent_Font_CreateFromSystem(pDoc, fontNames[i], szStyle, bEmbed);
+        if (pFont != NULL)
+            return pFont;
+    }
+    return NULL;
+}
 int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 {
     // Objects that need releasing or closing
@@ -284,7 +298,7 @@ int StampPageNumber(TPtxPdf_Document* pDocument, TPtxPdfContent_Font* pFont,
                                      szErrorBuff, Ptx_GetLastError());
 
     TCHAR szStampText[50];
-    _stprintf(szStampText, _T("Page %d"), nPageNo);
+    _sntprintf(szStampText, ARRAY_SIZE(szStampText), _T("Page %d"), nPageNo);
 
     // Get width of stamp text
     double dStampWidth = PtxPdfContent_TextGenerator_GetWidth(pTextGenerator, szStampText);
@@ -535,7 +549,7 @@ int _tmain(int argc, TCHAR* argv[])
                                      szOutPath, szErrorBuff, Ptx_GetLastError());
 
     // Create font
-    pFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), _T("Italic"), TRUE);
+    pFont = createFontWithFallbacks(pOutDoc, _T("Italic"), TRUE);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x)\n"), szErrorBuff,
                                      Ptx_GetLastError());
 
