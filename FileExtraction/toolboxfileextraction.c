@@ -92,8 +92,8 @@ int extractFile(TPtxPdf_FileReference* pFileRef, const TCHAR* szOutputDir)
 {
     FILE*                    pOutStream = NULL;
     TPtxSys_StreamDescriptor outDescriptor;
-    TCHAR                    szOutPath[512] = {'\0'};
-    TCHAR                    szName[256]    = {'\0'};
+    TCHAR                    szOutPath[PATH_MAX] = {'\0'};
+    TCHAR                    szName[256]         = {'\0'};
 
     // Get file name
     size_t nNameSize = PtxPdf_FileReference_GetName(pFileRef, NULL, 0);
@@ -107,7 +107,7 @@ int extractFile(TPtxPdf_FileReference* pFileRef, const TCHAR* szOutputDir)
     PtxPdf_FileReference_GetName(pFileRef, szName, nNameSize);
 
     // Build output path
-    _stprintf(szOutPath, _T("%s/%s"), szOutputDir, szName);
+    _sntprintf(szOutPath, ARRAY_SIZE(szOutPath), _T("%s") PATH_SEP_STR _T("%s"), szOutputDir, szName);
 
     // Open output file
     pOutStream = _tfopen(szOutPath, _T("wb+"));

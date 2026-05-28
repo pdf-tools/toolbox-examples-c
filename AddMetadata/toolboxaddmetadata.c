@@ -232,7 +232,7 @@ int _tmain(int argc, TCHAR* argv[])
         TCHAR* szExt = _tcsrchr(szMdatafile, '.');
         _tcscpy(szExtension, szExt);
 
-        if (_tcscmp(szExtension, _T(".pdf")) == 0)
+        if (_tcsicmp(szExtension, _T(".pdf")) == 0)
         {
             // Use the metadata of another PDF file
             TPtxPdf_Document* pMetaDoc = PtxPdf_Document_Open(&mdataDescriptor, _T(""));

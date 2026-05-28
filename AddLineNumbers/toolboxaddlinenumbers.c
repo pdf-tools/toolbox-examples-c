@@ -109,6 +109,20 @@ static unsigned int iLineNumber = 0;
 // Maximum number of unique Y positions (lines) per page
 #define MAX_LINE_POSITIONS 4096
 
+/* Try creating a font from a list of fallback names (Linux systems may not have Arial) */
+TPtxPdfContent_Font* createFontWithFallbacks(TPtxPdf_Document* pDoc, const TCHAR* szStyle, BOOL bEmbed)
+{
+    const TCHAR*         fontNames[] = {_T("Arial"), _T("Liberation Sans"), _T("DejaVu Sans"), _T("Helvetica"),
+                                        _T("sans-serif")};
+    TPtxPdfContent_Font* pFont       = NULL;
+    for (size_t i = 0; i < sizeof(fontNames) / sizeof(fontNames[0]); i++)
+    {
+        pFont = PtxPdfContent_Font_CreateFromSystem(pDoc, fontNames[i], szStyle, bEmbed);
+        if (pFont != NULL)
+            return pFont;
+    }
+    return NULL;
+}
 int copyDocumentData(TPtxPdf_Document* pInDoc, TPtxPdf_Document* pOutDoc)
 {
     TPtxPdf_FileReferenceList* pInFileRefList;
@@ -302,7 +316,7 @@ int addLineNumbers(TPtxPdf_Document* pOutDoc, TPtxPdfContent_Font* pFont, TPtxPd
         {
             TCHAR szLineNum[32];
             iLineNumber++;
-            _stprintf(szLineNum, _T("%u"), iLineNumber);
+            _sntprintf(szLineNum, ARRAY_SIZE(szLineNum), _T("%u"), iLineNumber);
 
             // Get the width of the line number string
             double dWidth = PtxPdfContent_TextGenerator_GetWidth(pTextGen, szLineNum);
@@ -419,7 +433,7 @@ int _tmain(int argc, TCHAR* argv[])
                                       Ptx_GetLastError());
 
     // Create a font for the line numbers
-    pFont = PtxPdfContent_Font_CreateFromSystem(pOutDoc, _T("Arial"), NULL, TRUE);
+    pFont = createFontWithFallbacks(pOutDoc, NULL, TRUE);
     GOTO_CLEANUP_IF_NULL_PRINT_ERROR(pFont, _T("Failed to create font. %s (ErrorCode: 0x%08x).\n"), szErrorBuff,
                                      Ptx_GetLastError());
 

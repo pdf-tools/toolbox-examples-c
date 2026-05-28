@@ -117,8 +117,9 @@ int extractImages(TPtxPdfContent_ContentExtractor* pExtractor, int iPageNo, cons
             else
                 szExtension = _T(".tiff");
 
-            TCHAR szOutPath[256] = {'\0'};
-            _stprintf(szOutPath, _T("%s/image_page%d_%d%s"), szOutputDir, iPageNo, iImgCount, szExtension);
+            TCHAR szOutPath[PATH_MAX] = {'\0'};
+            _sntprintf(szOutPath, ARRAY_SIZE(szOutPath), _T("%s") PATH_SEP_STR _T("image_page%d_%d%s"), szOutputDir,
+                       iPageNo, iImgCount, szExtension);
 
             pOutStream = _tfopen(szOutPath, _T("wb+"));
             GOTO_CLEANUP_IF_NULL(pOutStream, _T("Failed to open output file \"%s\".\n"), szOutPath);
@@ -156,8 +157,9 @@ int extractImages(TPtxPdfContent_ContentExtractor* pExtractor, int iPageNo, cons
 
             szExtension = _T(".tiff");
 
-            TCHAR szOutPath[256] = {'\0'};
-            _stprintf(szOutPath, _T("%s/image_mask_page%d_%d%s"), szOutputDir, iPageNo, iImgMaskCount, szExtension);
+            TCHAR szOutPath[PATH_MAX] = {'\0'};
+            _sntprintf(szOutPath, ARRAY_SIZE(szOutPath), _T("%s") PATH_SEP_STR _T("image_mask_page%d_%d%s"),
+                       szOutputDir, iPageNo, iImgMaskCount, szExtension);
 
             pOutStream = _tfopen(szOutPath, _T("wb+"));
             GOTO_CLEANUP_IF_NULL(pOutStream, _T("Failed to open output file \"%s\".\n"), szOutPath);

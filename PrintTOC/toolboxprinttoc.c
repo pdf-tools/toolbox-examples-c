@@ -117,7 +117,7 @@ int findPageNumber(TPtxPdf_Document* pDoc, TPtxPdf_Page* pTargetPage)
 }
 void printOutlineItem(TPtxPdfNav_OutlineItem* pItem, const TCHAR* szIndentation, TPtxPdf_Document* pDoc)
 {
-    TCHAR  szTitle[512]       = {'\0'};
+    TCHAR  szTitle[PATH_MAX]  = {'\0'};
     TCHAR  szChildIndent[256] = {'\0'};
     size_t nTitleSize;
     int    iPageNumber;
@@ -152,7 +152,7 @@ void printOutlineItem(TPtxPdfNav_OutlineItem* pItem, const TCHAR* szIndentation,
                         TCHAR szDots[256] = {'\0'};
                         int   k;
 
-                        _stprintf(szPageNum, _T("%d"), iPageNumber);
+                        _sntprintf(szPageNum, ARRAY_SIZE(szPageNum), _T("%d"), iPageNumber);
                         nIndentLen  = (int)_tcslen(szIndentation);
                         nTitleLen   = (int)_tcslen(szTitle);
                         nPageNumLen = (int)_tcslen(szPageNum);
