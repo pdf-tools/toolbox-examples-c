@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)CMakeLists\\.txt$/"
+      ],
+      "matchStrings": [
+        "productkits/PDFSDKXT/(?<currentValue>\\d+\\.\\d+\\.\\d+)/",
+        "PdfTools_Toolbox_C-(?<currentValue>\\d+\\.\\d+\\.\\d+)\\.zip"
+      ],
+      "depNameTemplate": "PdfTools.Toolbox",
+      "datasourceTemplate": "nuget",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["*"],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": ["PdfTools.Toolbox"],
+      "enabled": true,
+      "groupName": "PdfTools Toolbox",
+      "commitMessageTopic": "PdfTools Toolbox"
+    }
+  ]
+}
